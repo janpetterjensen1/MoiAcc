@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 
 interface Props {
   initial: string;
@@ -17,11 +16,10 @@ export function ProfilKnapp({ initial, avatarUrl, visningsnavn }: Props) {
       className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-600 hover:bg-slate-500 transition-colors overflow-hidden ring-2 ring-slate-700 hover:ring-slate-400"
     >
       {avatarUrl ? (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           src={avatarUrl}
           alt={visningsnavn ?? "Profil"}
-          width={32}
-          height={32}
           className="object-cover w-full h-full"
         />
       ) : (

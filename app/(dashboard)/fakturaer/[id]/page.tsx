@@ -109,7 +109,11 @@ export default async function FakturaDetaljSide({ params }: Props) {
                   {formatNorskDato(linje.session_date)}
                 </td>
                 <td className="px-4 py-3 text-slate-500 hidden sm:table-cell">
-                  {linje.note ?? `Gruppetime ${formatNorskDato(linje.session_date)}`}
+                  {linje.note?.startsWith("__prebilled__|")
+                    ? linje.note.split("|")[1]
+                    : (linje.note && !linje.note.startsWith("__"))
+                      ? linje.note
+                      : "Undervisning"}
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums">
                   {Number(linje.actual_duration_h).toFixed(1)}

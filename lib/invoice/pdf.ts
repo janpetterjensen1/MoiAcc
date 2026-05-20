@@ -22,6 +22,11 @@ export function byggPdfData(
       legal_name: kunde.legal_name,
       org_number: kunde.org_number,
       invoice_address: kunde.invoice_address as { street: string; postal_code: string; city: string },
+      invoice_email: kunde.invoice_email,
+      rekvirent: kunde.rekvirent ?? null,
+      bestillings_nummer: kunde.bestillings_nummer ?? null,
+      lokasjon: kunde.lokasjon ?? null,
+      avtale_dato: kunde.avtale_dato ?? null,
     },
     seller: {
       name: process.env.SELLER_NAME ?? "Jan Petter Jensen",

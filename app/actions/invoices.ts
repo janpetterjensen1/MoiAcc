@@ -17,6 +17,7 @@ import {
 import { hentKunde } from "@/lib/db/customers";
 import { byggFakturaForslag, innevarendeMaanedPeriode } from "@/lib/invoice/compiler";
 import { sendInvoice } from "@/lib/invoice/send";
+import { produktNavnFraVarighet } from "@/lib/products";
 import type { SesjonRad } from "@/lib/invoice/compiler";
 
 /**
@@ -117,7 +118,7 @@ export async function opprettFakturaForslag(customerId: string) {
         hourly_rate_at_time: hourlyRate,
         status: "invoiced",
         invoice_id: faktura.id,
-        note: "__prebilled__",
+        note: `__prebilled__|${produktNavnFraVarighet(timer)}`,
         logged_by: user.id,
       });
     }

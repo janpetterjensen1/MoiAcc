@@ -90,7 +90,6 @@ export function UtgiftSkjema() {
   return (
     <form
       action={registrerUtgift}
-      encType="multipart/form-data"
       className="space-y-5"
     >
       {/* Dato */}

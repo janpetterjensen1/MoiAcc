@@ -18,6 +18,11 @@ export async function GET() {
       legal_name: "Equinor ASA",
       org_number: "923 609 016",
       invoice_address: { street: "Forusbeen 50", postal_code: "4035", city: "Stavanger" },
+      invoice_email: "faktura@equinor.com",
+      rekvirent: "Tore Morten Otterstad",
+      bestillings_nummer: "1.1025",
+      lokasjon: "Snarøyveien 30",
+      avtale_dato: "2026-01-01",
     },
     seller: {
       name: "Jan Petter Jensen",

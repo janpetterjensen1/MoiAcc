@@ -9,6 +9,7 @@ import {
   Clock,
   Receipt,
   Calculator,
+  BookOpen,
   LogOut,
 } from "lucide-react";
 import { ProfilKnapp } from "@/components/ProfilKnapp";
@@ -20,6 +21,7 @@ const nav = [
   { href: "/fakturaer", label: "Fakturaer", icon: FileText },
   { href: "/utgifter", label: "Utgifter", icon: Receipt },
   { href: "/skatt", label: "Skatt", icon: Calculator },
+  { href: "/regnskap", label: "Regnskap", icon: BookOpen },
 ];
 
 export default async function DashboardLayout({

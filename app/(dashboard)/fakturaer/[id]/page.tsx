@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, AlertTriangle, FileDown } from "lucide-react";
+import { ArrowLeft, CheckCircle2, AlertTriangle, FileDown, Circle } from "lucide-react";
 import { hentFaktura, hentFakturaLinjer } from "@/lib/db/invoices";
 import { formatNorskDato, formatNorskValuta } from "@/lib/utils";
 import { GodkjennKnapp } from "./godkjenn-knapp";
@@ -90,6 +90,14 @@ export default async function FakturaDetaljSide({ params }: Props) {
           )}
         </div>
       </div>
+
+      {/* Statuslinje */}
+      <FakturaStatuslinje
+        createdAt={faktura.created_at}
+        sentAt={faktura.sent_at}
+        paidAt={faktura.paid_at}
+        status={faktura.status}
+      />
 
       {/* Tidslinjetabell */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-4">
@@ -207,6 +215,91 @@ export default async function FakturaDetaljSide({ params }: Props) {
           <KreditnotaKnapp fakturaId={faktura.id} />
         </div>
       )}
+    </div>
+  );
+}
+
+function FakturaStatuslinje({
+  createdAt,
+  sentAt,
+  paidAt,
+  status,
+}: {
+  createdAt: string;
+  sentAt: string | null;
+  paidAt: string | null;
+  status: string;
+}) {
+  const erKreditert = status === "credited";
+  const erForfalt = status === "overdue";
+
+  const steg = [
+    {
+      label: "Produsert",
+      dato: createdAt,
+      ferdig: true,
+      farge: "green",
+    },
+    {
+      label: "Sendt",
+      dato: sentAt,
+      ferdig: !!sentAt,
+      farge: erForfalt ? "red" : "blue",
+      ekstra: erForfalt ? "Forfalt" : undefined,
+    },
+    {
+      label: erKreditert ? "Kreditert" : "Betalt",
+      dato: paidAt,
+      ferdig: !!paidAt || erKreditert,
+      farge: erKreditert ? "purple" : "green",
+    },
+  ];
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 mb-4">
+      <div className="flex items-start justify-between relative">
+        {/* Forbindelseslinje */}
+        <div className="absolute top-3.5 left-[calc(16.666%)] right-[calc(16.666%)] h-px bg-slate-200" />
+
+        {steg.map((s, i) => {
+          const fargeKlasser: Record<string, { dot: string; tekst: string }> = {
+            green:  { dot: "bg-green-500 border-green-500",   tekst: "text-green-600" },
+            blue:   { dot: "bg-blue-500 border-blue-500",     tekst: "text-blue-600" },
+            red:    { dot: "bg-red-500 border-red-500",       tekst: "text-red-600" },
+            purple: { dot: "bg-purple-500 border-purple-500", tekst: "text-purple-600" },
+          };
+          const f = fargeKlasser[s.farge] ?? fargeKlasser.green;
+          return (
+            <div key={i} className="flex flex-col items-center flex-1 relative z-10">
+              <div
+                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center bg-white
+                  ${s.ferdig ? f.dot : "border-slate-300 bg-white"}`}
+              >
+                {s.ferdig ? (
+                  <CheckCircle2 size={16} className="text-white" />
+                ) : (
+                  <Circle size={10} className="text-slate-300 fill-slate-200" />
+                )}
+              </div>
+              <p className={`mt-2 text-xs font-semibold ${s.ferdig ? f.tekst : "text-slate-400"}`}>
+                {s.label}
+              </p>
+              {s.dato ? (
+                <p className="text-[10px] text-slate-400 mt-0.5 text-center">
+                  {formatNorskDato(s.dato.slice(0, 10))}
+                </p>
+              ) : (
+                <p className="text-[10px] text-slate-300 mt-0.5">—</p>
+              )}
+              {s.ekstra && (
+                <span className="mt-1 text-[9px] font-semibold text-red-500 uppercase tracking-wide">
+                  {s.ekstra}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

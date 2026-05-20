@@ -18,6 +18,10 @@ interface Prefill {
   invoice_address_street?: string;
   invoice_address_postal_code?: string;
   invoice_address_city?: string;
+  rekvirent?: string;
+  bestillings_nummer?: string;
+  lokasjon?: string;
+  avtale_dato?: string;
 }
 
 interface Props {
@@ -203,6 +207,17 @@ export function KundeSkjema({ action, prefill, feil, lagret }: Props) {
           defaultValue={prefill?.notes}
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
         />
+      </div>
+
+      {/* Fakturadetaljer */}
+      <div className="border-t border-slate-200 pt-5">
+        <p className="text-sm font-semibold text-slate-700 mb-4">Fakturadetaljer</p>
+        <div className="space-y-4">
+          <Felt label="Rekvirent (kontaktperson hos kunde)" name="rekvirent" defaultValue={prefill?.rekvirent} placeholder="Tore Morten Otterstad" />
+          <Felt label="Bestillingsnummer" name="bestillings_nummer" defaultValue={prefill?.bestillings_nummer} placeholder="1.1025" />
+          <Felt label="Treningssted" name="lokasjon" defaultValue={prefill?.lokasjon} placeholder="Snarøyveien 30" />
+          <Felt label="Avtaledato" name="avtale_dato" type="date" defaultValue={prefill?.avtale_dato} />
+        </div>
       </div>
 
       <button

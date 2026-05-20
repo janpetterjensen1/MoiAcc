@@ -13,3 +13,8 @@ export const PRODUKTER: Produkt[] = [
 ];
 
 export const AKTIVE_PRODUKTER = PRODUKTER.filter((p) => p.aktiv);
+
+export function produktNavnFraVarighet(varighet_h: number): string {
+  const produkt = PRODUKTER.find((p) => p.aktiv && p.varighet_h === varighet_h);
+  return produkt?.navn ?? `Undervisning ${varighet_h}t`;
+}

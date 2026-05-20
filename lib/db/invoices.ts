@@ -20,6 +20,10 @@ export interface FakturaForPdf {
     org_number: string;
     invoice_address: unknown;
     invoice_email: string;
+    rekvirent: string | null;
+    bestillings_nummer: string | null;
+    lokasjon: string | null;
+    avtale_dato: string | null;
   } | null;
 }
 
@@ -208,7 +212,7 @@ export async function hentFakturaForPdf(id: string) {
   const supabase = await createClient();
   const result = await supabase
     .from("invoices")
-    .select("*, customers(id, legal_name, org_number, invoice_address, invoice_email)")
+    .select("*, customers(id, legal_name, org_number, invoice_address, invoice_email, rekvirent, bestillings_nummer, lokasjon, avtale_dato)")
     .eq("id", id)
     .single();
   return result as unknown as { data: FakturaForPdf | null; error: { message: string } | null };

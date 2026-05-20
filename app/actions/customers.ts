@@ -11,7 +11,7 @@ const kundeSchema = z.object({
   legal_name: z.string().min(1),
   org_number: z.string().regex(/^\d{9}$/, "Org.nr må være 9 siffer"),
   invoice_email: z.string().email("Ugyldig e-post"),
-  invoice_day_rule: z.enum(["last_friday", "last_weekday", "day_25"]),
+  invoice_day_rule: z.string().min(1),
   payment_days: z.coerce.number().int().min(1).max(60),
   hourly_rate: z.coerce.number().positive("Timesats må være positiv"),
   active_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -20,6 +20,10 @@ const kundeSchema = z.object({
   invoice_address_street: z.string().min(1),
   invoice_address_postal_code: z.string().regex(/^\d{4}$/, "Postnummer må være 4 siffer"),
   invoice_address_city: z.string().min(1),
+  rekvirent: z.string().optional(),
+  bestillings_nummer: z.string().optional(),
+  lokasjon: z.string().optional(),
+  avtale_dato: z.string().optional(),
 });
 
 export async function opprettKundeAction(formData: FormData) {
@@ -37,6 +41,10 @@ export async function opprettKundeAction(formData: FormData) {
     invoice_address_street: formData.get("invoice_address_street"),
     invoice_address_postal_code: formData.get("invoice_address_postal_code"),
     invoice_address_city: formData.get("invoice_address_city"),
+    rekvirent: formData.get("rekvirent") as string || undefined,
+    bestillings_nummer: formData.get("bestillings_nummer") as string || undefined,
+    lokasjon: formData.get("lokasjon") as string || undefined,
+    avtale_dato: formData.get("avtale_dato") as string || undefined,
   };
 
   const parsed = kundeSchema.safeParse(raw);
@@ -46,6 +54,7 @@ export async function opprettKundeAction(formData: FormData) {
   }
 
   const d = parsed.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await opprettKunde({
     short_name: d.short_name,
     legal_name: d.legal_name,
@@ -63,7 +72,11 @@ export async function opprettKundeAction(formData: FormData) {
       postal_code: d.invoice_address_postal_code,
       city: d.invoice_address_city,
     },
-  });
+    rekvirent: d.rekvirent ?? null,
+    bestillings_nummer: d.bestillings_nummer ?? null,
+    lokasjon: d.lokasjon ?? null,
+    avtale_dato: d.avtale_dato ?? null,
+  } as any);
 
   if (error || !data) {
     return redirect("/kunder/ny?feil=" + encodeURIComponent(error?.message ?? "Ukjent feil"));
@@ -91,6 +104,10 @@ export async function oppdaterKundeAction(id: string, formData: FormData) {
     invoice_address_street: formData.get("invoice_address_street"),
     invoice_address_postal_code: formData.get("invoice_address_postal_code"),
     invoice_address_city: formData.get("invoice_address_city"),
+    rekvirent: formData.get("rekvirent") as string || undefined,
+    bestillings_nummer: formData.get("bestillings_nummer") as string || undefined,
+    lokasjon: formData.get("lokasjon") as string || undefined,
+    avtale_dato: formData.get("avtale_dato") as string || undefined,
   };
 
   const parsed = kundeSchema.safeParse(raw);
@@ -102,6 +119,7 @@ export async function oppdaterKundeAction(id: string, formData: FormData) {
   const { data: gammel } = await hentKunde(id);
 
   const d = parsed.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: ny, error } = await oppdaterKunde(id, {
     short_name: d.short_name,
     legal_name: d.legal_name,
@@ -118,7 +136,11 @@ export async function oppdaterKundeAction(id: string, formData: FormData) {
       postal_code: d.invoice_address_postal_code,
       city: d.invoice_address_city,
     },
-  });
+    rekvirent: d.rekvirent ?? null,
+    bestillings_nummer: d.bestillings_nummer ?? null,
+    lokasjon: d.lokasjon ?? null,
+    avtale_dato: d.avtale_dato ?? null,
+  } as any);
 
   if (error || !ny) {
     return redirect(`/kunder/${id}?feil=` + encodeURIComponent(error?.message ?? "Ukjent feil"));

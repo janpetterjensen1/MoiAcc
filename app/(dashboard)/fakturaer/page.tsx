@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { hentAlleFakturaer } from "@/lib/db/invoices";
+import { hentAlleFakturaer, markerForfalteFakturaer } from "@/lib/db/invoices";
 import { hentAlleKunder } from "@/lib/db/customers";
 import { formatNorskDato, formatNorskValuta } from "@/lib/utils";
 import { OpprettFakturaKnapp } from "./opprett-knapp";
@@ -15,6 +15,7 @@ const STATUS_ETIKETT: Record<string, { tekst: string; klasse: string }> = {
 };
 
 export default async function FakturaerSide() {
+  await markerForfalteFakturaer();
   const [{ data: fakturaer }, { data: kunder }] = await Promise.all([
     hentAlleFakturaer(),
     hentAlleKunder(),

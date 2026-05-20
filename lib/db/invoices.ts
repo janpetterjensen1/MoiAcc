@@ -235,3 +235,48 @@ export async function sendFaktura(id: string) {
     .eq("id", id);
   return result as unknown as { error: { message: string } | null };
 }
+
+export async function markerForfalteFakturaer() {
+  const supabase = await createClient();
+  const iDag = new Date().toISOString().slice(0, 10);
+  return supabase
+    .from("invoices")
+    .update({ status: "overdue" })
+    .eq("status", "sent")
+    .lt("due_date", iDag);
+}
+
+export async function opprettKreditnota(originalId: string) {
+  const supabase = await createClient();
+  const { data: original, error } = await supabase
+    .from("invoices")
+    .select("*, customers(id, legal_name, org_number, invoice_address, invoice_email, rekvirent, bestillings_nummer, lokasjon, avtale_dato)")
+    .eq("id", originalId)
+    .single();
+  if (error || !original) return { data: null, error: error ?? new Error("Ikke funnet") };
+
+  const { data: ny, error: nyFeil } = await supabase
+    .from("invoices")
+    .insert({
+      customer_id: original.customer_id,
+      invoice_date: new Date().toISOString().slice(0, 10),
+      due_date: new Date().toISOString().slice(0, 10),
+      period_from: original.period_from,
+      period_to: original.period_to,
+      subtotal: -Number(original.subtotal),
+      vat_amount: 0,
+      vat_exempt_note: original.vat_exempt_note,
+      status: "credited",
+      created_by: original.created_by,
+    })
+    .select()
+    .single();
+  if (nyFeil || !ny) return { data: null, error: nyFeil };
+
+  await supabase
+    .from("invoices")
+    .update({ status: "credited", credited_by_id: ny.id })
+    .eq("id", originalId);
+
+  return { data: ny, error: null };
+}

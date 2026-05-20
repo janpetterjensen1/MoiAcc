@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, AlertTriangle, FileDown } from "lucide-react";
 import { hentFaktura, hentFakturaLinjer } from "@/lib/db/invoices";
 import { formatNorskDato, formatNorskValuta } from "@/lib/utils";
 import { GodkjennKnapp } from "./godkjenn-knapp";
+import { KreditnotaKnapp } from "./kreditnota-knapp";
 import { markerBetaltAction } from "@/app/actions/invoices";
 
 const STATUS_ETIKETT: Record<string, { tekst: string; klasse: string }> = {
@@ -174,25 +175,36 @@ export default async function FakturaDetaljSide({ params }: Props) {
         </div>
       )}
 
-      {faktura.status === "sent" && (
+      {(faktura.status === "sent" || faktura.status === "overdue") && (
+        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-700 mb-3">Registrer betaling</p>
+            <form action={markerBetaltAction} className="flex gap-3">
+              <input type="hidden" name="faktura_id" value={faktura.id} />
+              <input
+                name="paid_at"
+                type="date"
+                defaultValue={new Date().toISOString().slice(0, 10)}
+                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-500"
+              />
+              <button
+                type="submit"
+                className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
+              >
+                <CheckCircle2 size={15} />
+                Merk betalt
+              </button>
+            </form>
+          </div>
+          <div className="border-t border-slate-100 pt-3">
+            <KreditnotaKnapp fakturaId={faktura.id} />
+          </div>
+        </div>
+      )}
+
+      {faktura.status === "paid" && (
         <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <p className="text-sm font-semibold text-slate-700 mb-3">Registrer betaling</p>
-          <form action={markerBetaltAction} className="flex gap-3">
-            <input type="hidden" name="faktura_id" value={faktura.id} />
-            <input
-              name="paid_at"
-              type="date"
-              defaultValue={new Date().toISOString().slice(0, 10)}
-              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-500"
-            />
-            <button
-              type="submit"
-              className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
-            >
-              <CheckCircle2 size={15} />
-              Merk betalt
-            </button>
-          </form>
+          <KreditnotaKnapp fakturaId={faktura.id} />
         </div>
       )}
     </div>

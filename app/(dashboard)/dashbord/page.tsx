@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { format, endOfWeek, isToday, isTomorrow } from "date-fns";
 import { nb } from "date-fns/locale";
-import { CheckCircle2, ChevronRight, Clock } from "lucide-react";
+import { CheckCircle2, ChevronRight, Clock, TrendingUp, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { hentDagensSesjoner, hentSesjonloggForManed, hentSesjoner } from "@/lib/db/sessions";
+import { hentFakturainntektForAar } from "@/lib/db/skatt";
 import { formatNorskValuta } from "@/lib/utils";
 import type { PlanlagtSesjonMedKunde } from "@/lib/db/sessions";
 
@@ -24,11 +25,16 @@ export default async function DashbordSide() {
   const iDagStr = format(iDag, "yyyy-MM-dd");
   const ukeSlutt = format(endOfWeek(iDag, { weekStartsOn: 1 }), "yyyy-MM-dd");
 
-  const [{ data: dagensSesjoner }, { data: maanedLogg }, { data: ukensSesjoner }] = await Promise.all([
+  const [{ data: dagensSesjoner }, { data: maanedLogg }, { data: ukensSesjoner }, ytdInntekt, { data: alleFakturaer }] = await Promise.all([
     hentDagensSesjoner(),
     hentSesjonloggForManed(ar, maned),
     hentSesjoner(iDagStr, ukeSlutt),
+    hentFakturainntektForAar(ar),
+    supabase.from("invoices").select("status, total, due_date").in("status", ["sent", "overdue"]),
   ]);
+
+  const ubetaltBelop = (alleFakturaer ?? []).reduce((sum, f) => sum + Number(f.total), 0);
+  const forfaltAntall = (alleFakturaer ?? []).filter((f) => f.status === "overdue").length;
 
   const timebankTotalt = (maanedLogg ?? [])
     .filter((r) => r.status === "pending_invoice")
@@ -56,6 +62,24 @@ export default async function DashbordSide() {
 
       {/* Nøkkeltall */}
       <div className="grid grid-cols-2 gap-3 mb-8">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs text-slate-400 mb-1 flex items-center gap-1">
+            <TrendingUp size={11} /> Inntekt {ar}
+          </p>
+          <p className="text-2xl font-bold text-slate-900">{formatNorskValuta(ytdInntekt)}</p>
+          <p className="text-xs text-slate-400 mt-0.5">sendte + betalte fakturaer</p>
+        </div>
+        <div className={`rounded-xl border p-4 shadow-sm ${forfaltAntall > 0 ? "border-red-200 bg-red-50" : "border-slate-200 bg-white"}`}>
+          <p className={`text-xs mb-1 flex items-center gap-1 ${forfaltAntall > 0 ? "text-red-500" : "text-slate-400"}`}>
+            <AlertCircle size={11} /> Utestående
+          </p>
+          <p className={`text-2xl font-bold ${forfaltAntall > 0 ? "text-red-700" : "text-slate-900"}`}>
+            {formatNorskValuta(ubetaltBelop)}
+          </p>
+          <p className={`text-xs mt-0.5 ${forfaltAntall > 0 ? "text-red-500" : "text-slate-400"}`}>
+            {forfaltAntall > 0 ? `${forfaltAntall} forfalt` : "ubetalte fakturaer"}
+          </p>
+        </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs text-slate-400 mb-1 flex items-center gap-1">
             <Clock size={11} /> Timer ufakturert

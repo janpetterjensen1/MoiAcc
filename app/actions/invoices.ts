@@ -13,6 +13,8 @@ import {
   hentMaanedSesjoner,
   hentSesjonLogForScheduledIds,
   opprettPreBilledLogg,
+  opprettKreditnota,
+  markerForfalteFakturaer,
 } from "@/lib/db/invoices";
 import { hentKunde } from "@/lib/db/customers";
 import { byggFakturaForslag, innevarendeMaanedPeriode } from "@/lib/invoice/compiler";
@@ -157,5 +159,18 @@ export async function markerBetaltAction(formData: FormData) {
 
   await markerFakturaBetalt(fakturaId, paidAt);
   revalidatePath(`/fakturaer/${fakturaId}`);
+  revalidatePath("/fakturaer");
+}
+
+export async function kreditnotatAction(fakturaId: string): Promise<{ success: boolean; error?: string; nyId?: string }> {
+  const { data, error } = await opprettKreditnota(fakturaId);
+  if (error || !data) return { success: false, error: "Kunne ikke opprette kreditnota" };
+  revalidatePath(`/fakturaer/${fakturaId}`);
+  revalidatePath("/fakturaer");
+  return { success: true, nyId: data.id };
+}
+
+export async function oppdaterForfalteFakturaerAction() {
+  await markerForfalteFakturaer();
   revalidatePath("/fakturaer");
 }

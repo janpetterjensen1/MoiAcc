@@ -108,17 +108,19 @@ export default async function DashboardLayout({
       </header>
 
       {/* Mobilnavigasjon */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-10 bg-slate-900 flex justify-around py-2 border-t border-slate-800">
-        {nav.slice(0, 5).map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex flex-col items-center gap-0.5 px-2 py-1 text-slate-400 hover:text-white"
-          >
-            <Icon size={20} />
-            <span className="text-[10px]">{label}</span>
-          </Link>
-        ))}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-10 bg-slate-900 border-t border-slate-800 overflow-x-auto">
+        <div className="flex justify-around min-w-max w-full px-1 py-2">
+          {nav.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="flex flex-col items-center gap-0.5 px-3 py-1 text-slate-400 hover:text-white shrink-0"
+            >
+              <Icon size={18} />
+              <span className="text-[9px]">{label}</span>
+            </Link>
+          ))}
+        </div>
       </nav>
 
       {/* Innhold */}

@@ -13,9 +13,8 @@ import {
   sendFaktura,
 } from "@/lib/db/invoices";
 
-function faktNr(invoiceNumber: number, invoiceDate: string) {
-  const year = invoiceDate.slice(0, 4);
-  return `${year}-${String(invoiceNumber).padStart(4, "0")}`;
+function faktNr(invoiceNumber: number) {
+  return String(invoiceNumber).padStart(6, "0");
 }
 
 function valuta(v: number | string) {
@@ -40,7 +39,7 @@ export async function sendInvoice(fakturaId: string): Promise<{ success: boolean
   // 2. Generer PDF
   const pdfBuffer = await genererPdfBuffer(faktura, linjer ?? []);
   const sha256 = createHash("sha256").update(pdfBuffer).digest("hex");
-  const nummerVisning = faktNr(faktura.invoice_number, faktura.invoice_date);
+  const nummerVisning = faktNr(faktura.invoice_number);
   const filnavn = `faktura-${nummerVisning}.pdf`;
   const storagePath = `${faktura.customer_id}/${faktura.invoice_date.slice(0, 7)}/${filnavn}`;
 

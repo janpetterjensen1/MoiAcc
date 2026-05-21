@@ -27,7 +27,7 @@ export function ReminderEmail({
   return (
     <Html lang="no">
       <Head />
-      <Preview>Purring: Faktura {fakturaNummerVisning} er {dagerSiden} dager forfalt</Preview>
+      <Preview>{`Purring: Faktura ${fakturaNummerVisning} er ${dagerSiden} dager forfalt`}</Preview>
       <Body style={{ backgroundColor: "#f8fafc", fontFamily: "sans-serif", margin: 0, padding: 0 }}>
         <Container style={{ maxWidth: 560, margin: "32px auto", backgroundColor: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden" }}>
           <Section style={{ backgroundColor: "#7f1d1d", padding: "20px 32px" }}>

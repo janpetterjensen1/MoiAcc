@@ -13,12 +13,26 @@ interface Props {
   telefon: string;
   tittel: string;
   avatarUrl: string | null;
+  orgNumber: string;
+  bankAccount: string;
+  iban: string;
+  address: string;
+  postalCode: string;
+  city: string;
+  invoiceEmail: string;
 }
 
-export function ProfilSkjema({ userId, email, visningsnavn, telefon, tittel, avatarUrl }: Props) {
+export function ProfilSkjema({ userId, email, visningsnavn, telefon, tittel, avatarUrl, orgNumber, bankAccount, iban, address, postalCode, city, invoiceEmail }: Props) {
   const [navn, setNavn] = useState(visningsnavn);
   const [tlf, setTlf] = useState(telefon);
   const [rolle, setRolle] = useState(tittel);
+  const [orgNr, setOrgNr] = useState(orgNumber);
+  const [konto, setKonto] = useState(bankAccount);
+  const [ibanNr, setIbanNr] = useState(iban);
+  const [adresse, setAdresse] = useState(address);
+  const [postnr, setPostnr] = useState(postalCode);
+  const [poststed, setPoststed] = useState(city);
+  const [fakturaEpost, setFakturaEpost] = useState(invoiceEmail);
 
   const [preview, setPreview] = useState<string | null>(avatarUrl);
   const [avatarStatus, setAvatarStatus] = useState<"idle" | "laster" | "ok" | "feil">("idle");
@@ -79,7 +93,15 @@ export function ProfilSkjema({ userId, email, visningsnavn, telefon, tittel, ava
     setLagreFeil("");
 
     startTransition(async () => {
-      const res = await oppdaterProfil(navn, rolle, tlf);
+      const res = await oppdaterProfil(navn, rolle, tlf, {
+        org_number:    orgNr,
+        bank_account:  konto,
+        iban:          ibanNr,
+        address:       adresse,
+        postal_code:   postnr,
+        city:          poststed,
+        invoice_email: fakturaEpost,
+      });
       if (res?.error) {
         setLagreStatus("feil");
         setLagreFeil(res.error);
@@ -187,6 +209,98 @@ export function ProfilSkjema({ userId, email, visningsnavn, telefon, tittel, ava
           placeholder="+47 900 00 000"
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
         />
+      </div>
+
+      {/* Fakturainformasjon */}
+      <div className="pt-4 border-t border-slate-100">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Fakturainformasjon</p>
+
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="p-orgnr" className="block text-xs font-medium text-slate-600 mb-1.5">Organisasjonsnummer</label>
+            <input
+              id="p-orgnr"
+              type="text"
+              value={orgNr}
+              onChange={(e) => { setOrgNr(e.target.value); setLagreStatus("idle"); }}
+              placeholder="123 456 789"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="p-konto" className="block text-xs font-medium text-slate-600 mb-1.5">Kontonummer</label>
+            <input
+              id="p-konto"
+              type="text"
+              value={konto}
+              onChange={(e) => { setKonto(e.target.value); setLagreStatus("idle"); }}
+              placeholder="1234.56.78901"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="p-iban" className="block text-xs font-medium text-slate-600 mb-1.5">IBAN</label>
+            <input
+              id="p-iban"
+              type="text"
+              value={ibanNr}
+              onChange={(e) => { setIbanNr(e.target.value); setLagreStatus("idle"); }}
+              placeholder="NO12 3456 7890 123"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="p-adresse" className="block text-xs font-medium text-slate-600 mb-1.5">Adresse</label>
+            <input
+              id="p-adresse"
+              type="text"
+              value={adresse}
+              onChange={(e) => { setAdresse(e.target.value); setLagreStatus("idle"); }}
+              placeholder="Storgata 1"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <div className="w-28">
+              <label htmlFor="p-postnr" className="block text-xs font-medium text-slate-600 mb-1.5">Postnr</label>
+              <input
+                id="p-postnr"
+                type="text"
+                value={postnr}
+                onChange={(e) => { setPostnr(e.target.value); setLagreStatus("idle"); }}
+                placeholder="0001"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
+            </div>
+            <div className="flex-1">
+              <label htmlFor="p-poststed" className="block text-xs font-medium text-slate-600 mb-1.5">Poststed</label>
+              <input
+                id="p-poststed"
+                type="text"
+                value={poststed}
+                onChange={(e) => { setPoststed(e.target.value); setLagreStatus("idle"); }}
+                placeholder="Oslo"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="p-fakturaepost" className="block text-xs font-medium text-slate-600 mb-1.5">Faktura-e-post</label>
+            <input
+              id="p-fakturaepost"
+              type="email"
+              value={fakturaEpost}
+              onChange={(e) => { setFakturaEpost(e.target.value); setLagreStatus("idle"); }}
+              placeholder="faktura@eksempel.no"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
+          </div>
+        </div>
       </div>
 
       <button

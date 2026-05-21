@@ -131,3 +131,58 @@ export async function sendInvoice(fakturaId: string): Promise<{ success: boolean
 
   return { success: true };
 }
+
+export async function sendPurring(fakturaId: string): Promise<{ success: boolean; error?: string }> {
+  const { data: faktura, error } = await hentFakturaForPdf(fakturaId);
+  if (error || !faktura) return { success: false, error: "Faktura ikke funnet" };
+  if (faktura.status !== "overdue") return { success: false, error: "Faktura er ikke forfalt" };
+
+  const kunde = faktura.customers;
+  if (!kunde) return { success: false, error: "Kundedata mangler" };
+
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  if (!gmailUser || !gmailPass) return { success: false, error: "E-postkonfig mangler" };
+
+  const selgerNavn = process.env.SELLER_NAME ?? "Jan Petter Jensen";
+  const selgerOrgNr = process.env.SELLER_ORG_NUMBER ?? "";
+  const selgerBankKonto = process.env.SELLER_BANK_ACCOUNT ?? "";
+  const nummerVisning = faktNr(faktura.invoice_number);
+
+  const dagerSiden = Math.floor(
+    (Date.now() - new Date(faktura.due_date).getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  const { ReminderEmail } = await import("@/components/email/ReminderEmail");
+  const emailHtml = await render(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    createElement(ReminderEmail, {
+      selgerNavn, selgerOrgNr, selgerBankKonto,
+      kundeNavn: kunde.legal_name,
+      fakturaNummerVisning: nummerVisning,
+      fakturadato: faktura.invoice_date,
+      forfallsdato: faktura.due_date,
+      total: valuta(faktura.total),
+      dagerSiden,
+    }) as React.ReactElement
+  );
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: gmailUser, pass: gmailPass },
+  });
+
+  try {
+    await transporter.sendMail({
+      from: `"${selgerNavn}" <${gmailUser}>`,
+      to: kunde.invoice_email,
+      subject: `Purring: Faktura ${nummerVisning} fra ${selgerNavn} — forfalt`,
+      html: emailHtml,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { success: false, error: `E-postfeil: ${msg}` };
+  }
+
+  return { success: true };
+}

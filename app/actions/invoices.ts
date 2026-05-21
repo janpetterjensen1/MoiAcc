@@ -174,3 +174,10 @@ export async function oppdaterForfalteFakturaerAction() {
   await markerForfalteFakturaer();
   revalidatePath("/fakturaer");
 }
+
+export async function sendPurringAction(fakturaId: string): Promise<{ success: boolean; error?: string }> {
+  const { sendPurring } = await import("@/lib/invoice/send");
+  const res = await sendPurring(fakturaId);
+  if (res.success) revalidatePath(`/fakturaer/${fakturaId}`);
+  return res;
+}

@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, Banknote } from "lucide-react";
 import { hentPlanlagtSesjon, hentTimebankForKunde } from "@/lib/db/sessions";
-import { kvitterGjennomfort, kvitterFravar } from "@/app/actions/sessions";
+import { kvitterFravar } from "@/app/actions/sessions";
 import { formatNorskDato, formatNorskValuta } from "@/lib/utils";
-import { ProduktVelger } from "@/components/ProduktVelger";
+import { KvitteringsSkjema } from "@/components/KvitteringsSkjema";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -95,30 +95,14 @@ export default async function KvitteringSide({ params, searchParams }: Props) {
             </div>
           </div>
 
-          {/* Kvitteringsskjema */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 mb-4">
-            <h2 className="text-sm font-semibold text-slate-700 mb-4">
-              Kvittér gjennomført
-            </h2>
-            <form action={kvitterGjennomfort} className="space-y-4">
-              <input type="hidden" name="sesjon_id" value={sesjon.id} />
-              <input type="hidden" name="customer_id" value={kunde.id} />
-              <input type="hidden" name="sesjon_date" value={sesjon.scheduled_date} />
-              <input type="hidden" name="timesats" value={kunde.hourly_rate} />
-
-              <ProduktVelger
-                defaultVarighet={Number(sesjon.planned_duration_h)}
-                timesats={Number(kunde.hourly_rate)}
-              />
-
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-700 transition-colors"
-              >
-                Kvittér gjennomført
-              </button>
-            </form>
-          </div>
+          {/* Kvitteringsskjema med stoppeklokke */}
+          <KvitteringsSkjema
+            sesjonId={sesjon.id}
+            customerId={kunde.id}
+            sesjonDate={sesjon.scheduled_date}
+            timesats={Number(kunde.hourly_rate)}
+            defaultVarighet={Number(sesjon.planned_duration_h)}
+          />
 
           {/* Fraværsknapper */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">

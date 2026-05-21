@@ -5,6 +5,7 @@ import { hentFaktura, hentFakturaLinjer } from "@/lib/db/invoices";
 import { formatNorskDato, formatNorskValuta } from "@/lib/utils";
 import { GodkjennKnapp } from "./godkjenn-knapp";
 import { KreditnotaKnapp } from "./kreditnota-knapp";
+import { PurringKnapp } from "./purring-knapp";
 import { markerBetaltAction } from "@/app/actions/invoices";
 
 const STATUS_ETIKETT: Record<string, { tekst: string; klasse: string }> = {
@@ -180,6 +181,13 @@ export default async function FakturaDetaljSide({ params }: Props) {
             </div>
           </div>
           <GodkjennKnapp fakturaId={faktura.id} />
+        </div>
+      )}
+
+      {faktura.status === "overdue" && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-5">
+          <p className="text-sm font-semibold text-red-800 mb-3">Faktura er forfalt</p>
+          <PurringKnapp fakturaId={faktura.id} />
         </div>
       )}
 

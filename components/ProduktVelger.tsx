@@ -1,16 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AKTIVE_PRODUKTER } from "@/lib/products";
 
 interface Props {
   defaultVarighet: number;
   timesats: number;
+  eksternVarighet?: number | null;
 }
 
-export function ProduktVelger({ defaultVarighet, timesats }: Props) {
+export function ProduktVelger({ defaultVarighet, timesats, eksternVarighet }: Props) {
   const [valgt, setValgt] = useState("");
   const [varighet, setVaright] = useState(defaultVarighet);
+
+  useEffect(() => {
+    if (eksternVarighet != null) setVaright(eksternVarighet);
+  }, [eksternVarighet]);
 
   function velgProdukt(navn: string) {
     setValgt(navn);

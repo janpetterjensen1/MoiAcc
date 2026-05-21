@@ -7,7 +7,19 @@ export default async function ProfilSide() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  type Profil = { visningsnavn: string; tittel: string; telefon: string; avatar_url: string | null };
+  type Profil = {
+    visningsnavn: string;
+    tittel: string;
+    telefon: string;
+    avatar_url: string | null;
+    org_number: string | null;
+    bank_account: string | null;
+    iban: string | null;
+    address: string | null;
+    postal_code: string | null;
+    city: string | null;
+    invoice_email: string | null;
+  };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profil } = await (supabase as any).from("profiles").select("*").eq("id", user.id).single() as { data: Profil | null; error: unknown };
 
@@ -22,6 +34,13 @@ export default async function ProfilSide() {
           tittel={profil?.tittel ?? ""}
           telefon={profil?.telefon ?? ""}
           avatarUrl={profil?.avatar_url ?? null}
+          orgNumber={profil?.org_number ?? ""}
+          bankAccount={profil?.bank_account ?? ""}
+          iban={profil?.iban ?? ""}
+          address={profil?.address ?? ""}
+          postalCode={profil?.postal_code ?? ""}
+          city={profil?.city ?? ""}
+          invoiceEmail={profil?.invoice_email ?? ""}
         />
       </div>
     </div>

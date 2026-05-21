@@ -3,9 +3,20 @@ import { createElement } from "react";
 import { InvoicePdf, type PdfInvoiceData } from "@/components/pdf/InvoicePdf";
 import type { FakturaForPdf, FakturaLinje } from "@/lib/db/invoices";
 
+type SellerOverride = {
+  name: string;
+  phone: string;
+  address: string;
+  org_number: string;
+  bank_account: string;
+  iban: string;
+  email: string;
+};
+
 export function byggPdfData(
   faktura: FakturaForPdf,
-  linjer: FakturaLinje[]
+  linjer: FakturaLinje[],
+  sellerOverride?: SellerOverride,
 ): PdfInvoiceData {
   const kunde = faktura.customers!;
   return {
@@ -29,14 +40,14 @@ export function byggPdfData(
       avtale_dato: kunde.avtale_dato ?? null,
     },
     seller: {
-      name: process.env.SELLER_NAME ?? "Jan Petter Jensen",
-      tagline: process.env.SELLER_TAGLINE ?? "",
-      phone: process.env.SELLER_PHONE ?? "",
-      address: process.env.SELLER_ADDRESS ?? "",
-      org_number: process.env.SELLER_ORG_NUMBER ?? "",
-      bank_account: process.env.SELLER_BANK_ACCOUNT ?? "",
-      iban: process.env.SELLER_IBAN ?? "",
-      email: process.env.GMAIL_USER ?? "",
+      name:         sellerOverride?.name         ?? process.env.SELLER_NAME         ?? "",
+      tagline:      process.env.SELLER_TAGLINE   ?? "",
+      phone:        sellerOverride?.phone        ?? process.env.SELLER_PHONE        ?? "",
+      address:      sellerOverride?.address      ?? process.env.SELLER_ADDRESS      ?? "",
+      org_number:   sellerOverride?.org_number   ?? process.env.SELLER_ORG_NUMBER   ?? "",
+      bank_account: sellerOverride?.bank_account ?? process.env.SELLER_BANK_ACCOUNT ?? "",
+      iban:         sellerOverride?.iban         ?? process.env.SELLER_IBAN         ?? "",
+      email:        sellerOverride?.email        ?? process.env.GMAIL_USER          ?? "",
     },
     lines: linjer.map((l) => ({
       session_date: l.session_date,
@@ -50,9 +61,10 @@ export function byggPdfData(
 
 export async function genererPdfBuffer(
   faktura: FakturaForPdf,
-  linjer: FakturaLinje[]
+  linjer: FakturaLinje[],
+  sellerOverride?: SellerOverride,
 ): Promise<Buffer> {
-  const data = byggPdfData(faktura, linjer);
+  const data = byggPdfData(faktura, linjer, sellerOverride);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const element = createElement(InvoicePdf, { data }) as any;
   const uint8 = await renderToBuffer(element);

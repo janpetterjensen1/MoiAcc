@@ -3,6 +3,7 @@ import { hentAlleFakturaer, markerForfalteFakturaer } from "@/lib/db/invoices";
 import { hentAlleKunder } from "@/lib/db/customers";
 import { formatNorskDato, formatNorskValuta } from "@/lib/utils";
 import { OpprettFakturaKnapp } from "./opprett-knapp";
+import { GenererAlleUtkastKnapp } from "@/components/GenererAlleUtkastKnapp";
 import { FileText, ChevronRight } from "lucide-react";
 
 const STATUS_ETIKETT: Record<string, { tekst: string; klasse: string; stripe: string }> = {
@@ -31,7 +32,7 @@ export default async function FakturaerSide() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Fakturaer</h1>
           <p className="text-sm text-slate-500 mt-0.5">
@@ -43,7 +44,10 @@ export default async function FakturaerSide() {
             )}
           </p>
         </div>
-        <OpprettFakturaKnapp kunder={aktiveKunder} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <GenererAlleUtkastKnapp />
+          <OpprettFakturaKnapp kunder={aktiveKunder} />
+        </div>
       </div>
 
       {/* Venter godkjenning */}

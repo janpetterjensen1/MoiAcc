@@ -5,6 +5,7 @@ import { CheckCircle2, ChevronRight, Clock, TrendingUp, AlertCircle } from "luci
 import { createClient } from "@/lib/supabase/server";
 import { hentDagensSesjoner, hentSesjonloggForManed, hentSesjoner } from "@/lib/db/sessions";
 import { hentFakturainntektForAar } from "@/lib/db/skatt";
+import { BudsjettWidget } from "@/components/BudsjettWidget";
 import { formatNorskValuta } from "@/lib/utils";
 import type { PlanlagtSesjonMedKunde } from "@/lib/db/sessions";
 
@@ -91,6 +92,11 @@ export default async function DashbordSide() {
           verdi={String(planlagteIdag.length)}
           sub="ikke kvittert"
         />
+      </div>
+
+      {/* Budsjett */}
+      <div className="mb-6">
+        <BudsjettWidget ytdInntekt={ytdInntekt} aar={ar} />
       </div>
 
       {/* Ukeoversikt */}

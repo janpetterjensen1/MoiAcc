@@ -181,3 +181,33 @@ export async function sendPurringAction(fakturaId: string): Promise<{ success: b
   if (res.success) revalidatePath(`/fakturaer/${fakturaId}`);
   return res;
 }
+
+export async function genererAlleUtkastAction(): Promise<{
+  opprettet: string[];
+  hoppetOver: string[];
+  feil: { kunde: string; feil: string }[];
+}> {
+  const { hentAlleKunder } = await import("@/lib/db/customers");
+  const { data: kunder } = await hentAlleKunder();
+  const aktive = (kunder ?? []).filter(
+    (k) => !k.active_to || new Date(k.active_to) >= new Date()
+  );
+
+  const opprettet: string[] = [];
+  const hoppetOver: string[] = [];
+  const feil: { kunde: string; feil: string }[] = [];
+
+  for (const kunde of aktive) {
+    const res = await opprettFakturaForslag(kunde.id);
+    if (res.success) {
+      opprettet.push(kunde.short_name);
+    } else if (res.error?.includes("Ingen fakturerbare")) {
+      hoppetOver.push(kunde.short_name);
+    } else {
+      feil.push({ kunde: kunde.short_name, feil: res.error ?? "Ukjent feil" });
+    }
+  }
+
+  revalidatePath("/fakturaer");
+  return { opprettet, hoppetOver, feil };
+}

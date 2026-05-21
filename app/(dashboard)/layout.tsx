@@ -13,6 +13,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { ProfilKnapp } from "@/components/ProfilKnapp";
+import { NavItem } from "@/components/NavItem";
 
 const nav = [
   { href: "/dashbord", label: "Dashbord", icon: LayoutDashboard },
@@ -54,15 +55,8 @@ export default async function DashboardLayout({
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {nav.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-            >
-              <Icon size={16} />
-              {label}
-            </Link>
+          {nav.map(({ href, label, icon }) => (
+            <NavItem key={href} href={href} label={label} icon={icon} />
           ))}
         </nav>
 
@@ -109,16 +103,9 @@ export default async function DashboardLayout({
 
       {/* Mobilnavigasjon */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-10 bg-slate-900 border-t border-slate-800 overflow-x-auto">
-        <div className="flex justify-around min-w-max w-full px-1 py-2">
-          {nav.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex flex-col items-center gap-0.5 px-3 py-1 text-slate-400 hover:text-white shrink-0"
-            >
-              <Icon size={18} />
-              <span className="text-[9px]">{label}</span>
-            </Link>
+        <div className="flex justify-around min-w-max w-full px-1 py-1">
+          {nav.map(({ href, label, icon }) => (
+            <NavItem key={href} href={href} label={label} icon={icon} mobile />
           ))}
         </div>
       </nav>

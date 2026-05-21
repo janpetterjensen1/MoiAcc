@@ -62,36 +62,35 @@ export default async function DashbordSide() {
 
       {/* Nøkkeltall */}
       <div className="grid grid-cols-2 gap-3 mb-8">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs text-slate-400 mb-1 flex items-center gap-1">
-            <TrendingUp size={11} /> Inntekt {ar}
-          </p>
-          <p className="text-2xl font-bold text-slate-900">{formatNorskValuta(ytdInntekt)}</p>
-          <p className="text-xs text-slate-400 mt-0.5">sendte + betalte fakturaer</p>
-        </div>
-        <div className={`rounded-xl border p-4 shadow-sm ${forfaltAntall > 0 ? "border-red-200 bg-red-50" : "border-slate-200 bg-white"}`}>
-          <p className={`text-xs mb-1 flex items-center gap-1 ${forfaltAntall > 0 ? "text-red-500" : "text-slate-400"}`}>
-            <AlertCircle size={11} /> Utestående
-          </p>
-          <p className={`text-2xl font-bold ${forfaltAntall > 0 ? "text-red-700" : "text-slate-900"}`}>
-            {formatNorskValuta(ubetaltBelop)}
-          </p>
-          <p className={`text-xs mt-0.5 ${forfaltAntall > 0 ? "text-red-500" : "text-slate-400"}`}>
-            {forfaltAntall > 0 ? `${forfaltAntall} forfalt` : "ubetalte fakturaer"}
-          </p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs text-slate-400 mb-1 flex items-center gap-1">
-            <Clock size={11} /> Timer ufakturert
-          </p>
-          <p className="text-2xl font-bold text-slate-900">{timebankTotalt.toFixed(1)}t</p>
-          <p className="text-xs text-slate-400 mt-0.5">{formatNorskValuta(timebankBelop)}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs text-slate-400 mb-1">Oppdrag i dag</p>
-          <p className="text-2xl font-bold text-slate-900">{planlagteIdag.length}</p>
-          <p className="text-xs text-slate-400 mt-0.5">ikke kvittert</p>
-        </div>
+        <StatKort
+          ikon={<TrendingUp size={14} className="text-emerald-600" />}
+          ikonBg="bg-emerald-50"
+          label={`Inntekt ${ar}`}
+          verdi={formatNorskValuta(ytdInntekt)}
+          sub="sendte + betalte fakturaer"
+        />
+        <StatKort
+          ikon={<AlertCircle size={14} className={forfaltAntall > 0 ? "text-red-600" : "text-blue-600"} />}
+          ikonBg={forfaltAntall > 0 ? "bg-red-50" : "bg-blue-50"}
+          label="Utestående"
+          verdi={formatNorskValuta(ubetaltBelop)}
+          sub={forfaltAntall > 0 ? `${forfaltAntall} forfalt` : "ubetalte fakturaer"}
+          advarsel={forfaltAntall > 0}
+        />
+        <StatKort
+          ikon={<Clock size={14} className="text-amber-600" />}
+          ikonBg="bg-amber-50"
+          label="Timer ufakturert"
+          verdi={`${timebankTotalt.toFixed(1)}t`}
+          sub={formatNorskValuta(timebankBelop)}
+        />
+        <StatKort
+          ikon={<CheckCircle2 size={14} className="text-slate-500" />}
+          ikonBg="bg-slate-100"
+          label="Oppdrag i dag"
+          verdi={String(planlagteIdag.length)}
+          sub="ikke kvittert"
+        />
       </div>
 
       {/* Ukeoversikt */}
@@ -150,6 +149,30 @@ export default async function DashbordSide() {
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+function StatKort({
+  ikon, ikonBg, label, verdi, sub, advarsel,
+}: {
+  ikon: React.ReactNode;
+  ikonBg: string;
+  label: string;
+  verdi: string;
+  sub: string;
+  advarsel?: boolean;
+}) {
+  return (
+    <div className={`rounded-xl border p-4 shadow-sm flex flex-col gap-2 ${advarsel ? "border-red-200 bg-red-50" : "border-slate-200 bg-white"}`}>
+      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${ikonBg}`}>
+        {ikon}
+      </div>
+      <div>
+        <p className="text-xs text-slate-500 font-medium">{label}</p>
+        <p className={`text-xl font-bold mt-0.5 leading-tight ${advarsel ? "text-red-700" : "text-slate-900"}`}>{verdi}</p>
+        <p className={`text-xs mt-0.5 ${advarsel ? "text-red-500" : "text-slate-400"}`}>{sub}</p>
+      </div>
     </div>
   );
 }

@@ -7,14 +7,15 @@ export interface KontoSum {
 
 export async function hentUtgifterPerKontoForAar(aar: number): Promise<KontoSum[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("expenses" as any)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("expenses")
     .select("account_code, amount_gross")
     .gte("expense_date", `${aar}-01-01`)
     .lte("expense_date", `${aar}-12-31`);
   if (error || !data) return [];
   const map: Record<string, number> = {};
-  for (const r of data as { account_code: string; amount_gross: number }[]) {
+  for (const r of (data as { account_code: string; amount_gross: number }[])) {
     map[r.account_code] = (map[r.account_code] ?? 0) + Number(r.amount_gross);
   }
   return Object.entries(map)

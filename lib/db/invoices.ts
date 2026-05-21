@@ -248,14 +248,16 @@ export async function markerForfalteFakturaer() {
 
 export async function opprettKreditnota(originalId: string) {
   const supabase = await createClient();
-  const { data: original, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: original, error } = await (supabase as any)
     .from("invoices")
     .select("*, customers(id, legal_name, org_number, invoice_address, invoice_email, rekvirent, bestillings_nummer, lokasjon, avtale_dato)")
     .eq("id", originalId)
     .single();
   if (error || !original) return { data: null, error: error ?? new Error("Ikke funnet") };
 
-  const { data: ny, error: nyFeil } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: ny, error: nyFeil } = await (supabase as any)
     .from("invoices")
     .insert({
       customer_id: original.customer_id,

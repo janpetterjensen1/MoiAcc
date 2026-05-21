@@ -2,28 +2,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loggUt } from "@/app/actions/auth";
 import Link from "next/link";
-import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  Clock,
-  Receipt,
-  Calculator,
-  BookOpen,
-  LogOut,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { ProfilKnapp } from "@/components/ProfilKnapp";
-import { NavItem } from "@/components/NavItem";
-
-const nav = [
-  { href: "/dashbord", label: "Dashbord", icon: LayoutDashboard },
-  { href: "/kunder", label: "Kunder", icon: Users },
-  { href: "/timer", label: "Timer", icon: Clock },
-  { href: "/fakturaer", label: "Fakturaer", icon: FileText },
-  { href: "/utgifter", label: "Utgifter", icon: Receipt },
-  { href: "/skatt", label: "Skatt", icon: Calculator },
-  { href: "/regnskap", label: "Regnskap", icon: BookOpen },
-];
+import { DashboardNav, DashboardNavMobile } from "@/components/DashboardNav";
 
 export default async function DashboardLayout({
   children,
@@ -55,9 +36,7 @@ export default async function DashboardLayout({
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {nav.map(({ href, label, icon }) => (
-            <NavItem key={href} href={href} label={label} icon={icon} />
-          ))}
+          <DashboardNav />
         </nav>
 
         {/* Profil + logg ut (sidebar) */}
@@ -104,9 +83,7 @@ export default async function DashboardLayout({
       {/* Mobilnavigasjon */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-10 bg-slate-900 border-t border-slate-800 overflow-x-auto">
         <div className="flex justify-around min-w-max w-full px-1 py-1">
-          {nav.map(({ href, label, icon }) => (
-            <NavItem key={href} href={href} label={label} icon={icon} mobile />
-          ))}
+          <DashboardNavMobile />
         </div>
       </nav>
 

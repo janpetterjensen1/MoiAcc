@@ -102,6 +102,42 @@ export default async function DashboardLayout({
         </div>
       </aside>
 
+      {/* Mobile top header — profilbilde øverst til høyre */}
+      <header
+        className="md:hidden fixed top-0 inset-x-0 z-20 flex items-center justify-between px-4"
+        style={{
+          height: "52px",
+          background: "rgba(4,10,4,0.82)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(201,168,76,0.10)",
+        }}
+      >
+        {/* Logo */}
+        <span style={{ fontFamily: "var(--font-cinzel)", fontSize: "15px", color: "#c9a84c", letterSpacing: "1px" }}>
+          MoiAcc
+        </span>
+
+        {/* Profilbilde */}
+        <Link href="/profil">
+          <div
+            className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center"
+            style={{
+              background: "rgba(201,168,76,0.12)",
+              border: "1px solid rgba(201,168,76,0.28)",
+              boxShadow: "0 0 12px rgba(201,168,76,0.08)",
+            }}
+          >
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span style={{ fontFamily: "var(--font-cinzel)", fontSize: "14px", color: "#c9a84c" }}>{initial}</span>
+            )}
+          </div>
+        </Link>
+      </header>
+
       {/* Mobile bottom nav */}
       <nav
         className="md:hidden fixed bottom-0 inset-x-0 z-20 flex"
@@ -117,7 +153,7 @@ export default async function DashboardLayout({
       </nav>
 
       {/* Main content */}
-      <main className="flex-1 md:ml-60 pb-24 md:pb-0 relative z-10">
+      <main className="flex-1 md:ml-60 pt-[52px] md:pt-0 pb-24 md:pb-0 relative z-10">
         <div className="max-w-2xl mx-auto px-4 py-6">{children}</div>
       </main>
     </div>

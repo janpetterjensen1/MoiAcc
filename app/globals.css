@@ -16,6 +16,49 @@
   --color-text-dim: rgba(120, 180, 120, 0.5);
 }
 
+/* ── Liquid Emerald: remap slate scale globally ─────────────────────────── */
+@theme {
+  --color-slate-50:  #050d05;
+  --color-slate-100: #0a1a0a;
+  --color-slate-200: #142814;
+  --color-slate-300: #2a5a2a;
+  --color-slate-400: #5c8a5c;
+  --color-slate-500: #7aaa7a;
+  --color-slate-600: #98c298;
+  --color-slate-700: #b09848;
+  --color-slate-800: #c9a84c;
+  --color-slate-900: #e8d5a0;
+
+  /* Muted status backgrounds */
+  --color-amber-50:   #120e00;
+  --color-amber-100:  #1e1800;
+  --color-red-50:     #140505;
+  --color-red-100:    #200808;
+  --color-blue-50:    #050e18;
+  --color-blue-100:   #0a1825;
+  --color-emerald-50: #041208;
+  --color-green-50:   #041208;
+  --color-green-100:  #082010;
+  --color-violet-50:  #0e0518;
+  --color-purple-50:  #0e0518;
+  --color-purple-100: #180a28;
+
+  /* Muted status text */
+  --color-amber-600:  #c9a84c;
+  --color-amber-700:  #c9a84c;
+  --color-green-700:  #4ade80;
+  --color-green-600:  #4ade80;
+  --color-red-600:    #f87171;
+  --color-red-700:    #f87171;
+  --color-blue-700:   #60a5fa;
+  --color-blue-600:   #60a5fa;
+  --color-emerald-600: #34d399;
+  --color-emerald-700: #34d399;
+  --color-purple-700: #c084fc;
+  --color-purple-600: #c084fc;
+  --color-violet-600: #a78bfa;
+}
+
 :root {
   --gold: #c9a84c;
   --gold-dim: rgba(201, 168, 76, 0.55);
@@ -98,6 +141,34 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+
+/* ── Global bg-white override ────────────────────────────────────────────── */
+/* bg-white is not part of slate palette, so we override it directly        */
+.bg-white {
+  background: rgba(8, 22, 8, 0.55) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+/* Inputs and interactive elements: keep a darker glass */
+input.bg-white, textarea.bg-white, select.bg-white {
+  background: rgba(5, 14, 5, 0.7) !important;
+}
+
+/* Dropdowns / popovers */
+[class*="shadow-lg"].bg-white {
+  background: rgba(6, 16, 6, 0.92) !important;
+  border: 1px solid rgba(201,168,76,0.15) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+}
+
+/* Borders on white-bg cards */
+.border-slate-100 { border-color: rgba(20, 50, 20, 0.4) !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(201,168,76,0.35); }
 
 /* Section label */
 .section-label {

@@ -19,14 +19,27 @@ export function NavItem({ href, label, icon: Icon, mobile }: Props) {
     return (
       <Link
         href={href}
-        className={`flex flex-col items-center gap-0.5 px-3 py-1 shrink-0 transition-colors ${
-          aktiv ? "text-white" : "text-slate-400 hover:text-white"
-        }`}
+        className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5"
       >
-        <div className={`rounded-lg p-1 transition-colors ${aktiv ? "bg-slate-700" : ""}`}>
-          <Icon size={18} />
-        </div>
-        <span className={`text-[9px] font-medium ${aktiv ? "text-white" : ""}`}>{label}</span>
+        <Icon
+          size={22}
+          strokeWidth={1.5}
+          style={{
+            stroke: aktiv ? "#c9a84c" : "rgba(120,180,120,0.4)",
+            fill: "none",
+            transition: "stroke 0.15s",
+          }}
+        />
+        <span
+          style={{
+            fontSize: "10px",
+            color: aktiv ? "#c9a84c" : "rgba(120,180,120,0.4)",
+            letterSpacing: "0.3px",
+            transition: "color 0.15s",
+          }}
+        >
+          {label}
+        </span>
       </Link>
     );
   }
@@ -34,13 +47,22 @@ export function NavItem({ href, label, icon: Icon, mobile }: Props) {
   return (
     <Link
       href={href}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-        aktiv
-          ? "bg-slate-700 text-white font-medium"
-          : "text-slate-300 hover:bg-slate-800 hover:text-white"
-      }`}
+      className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all"
+      style={{
+        background: aktiv ? "rgba(201,168,76,0.10)" : "transparent",
+        color: aktiv ? "#c9a84c" : "rgba(168,216,168,0.6)",
+        border: aktiv ? "1px solid rgba(201,168,76,0.20)" : "1px solid transparent",
+        fontWeight: aktiv ? 500 : 400,
+      }}
     >
-      <Icon size={16} />
+      <Icon
+        size={15}
+        strokeWidth={1.5}
+        style={{
+          stroke: aktiv ? "#c9a84c" : "rgba(120,180,120,0.5)",
+          fill: "none",
+        }}
+      />
       {label}
     </Link>
   );

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { format, endOfWeek, isToday, isTomorrow } from "date-fns";
 import { nb } from "date-fns/locale";
-import { CheckCircle2, ChevronRight, Clock, TrendingUp, AlertCircle } from "lucide-react";
+import { CheckCircle2, ChevronRight, Clock, TrendingUp, AlertCircle, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { hentDagensSesjoner, hentSesjonloggForManed, hentSesjoner } from "@/lib/db/sessions";
 import { hentFakturainntektForAar } from "@/lib/db/skatt";
@@ -48,7 +48,6 @@ export default async function DashbordSide() {
   const planlagteIdag = (dagensSesjoner ?? []).filter((s) => s.status === "planned");
   const dagensTittel = format(iDag, "EEEE d. MMMM", { locale: nb });
 
-  // Grupper ukens sesjoner per dato
   const ukeDager = new Map<string, PlanlagtSesjonMedKunde[]>();
   for (const s of ukensSesjoner ?? []) {
     const liste = ukeDager.get(s.scheduled_date) ?? [];
@@ -57,68 +56,110 @@ export default async function DashbordSide() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-0.5">Dashbord</h1>
-      <p className="text-sm text-slate-500 mb-6 capitalize">{dagensTittel}</p>
+    <div className="flex flex-col gap-4">
 
-      {/* Nøkkeltall */}
-      <div className="grid grid-cols-2 gap-3 mb-8">
-        <StatKort
-          ikon={<TrendingUp size={14} className="text-emerald-600" />}
-          ikonBg="bg-emerald-50"
-          label={`Inntekt ${ar}`}
-          verdi={formatNorskValuta(ytdInntekt)}
-          sub="sendte + betalte fakturaer"
-        />
-        <StatKort
-          ikon={<AlertCircle size={14} className={forfaltAntall > 0 ? "text-red-600" : "text-blue-600"} />}
-          ikonBg={forfaltAntall > 0 ? "bg-red-50" : "bg-blue-50"}
-          label="Utestående"
-          verdi={formatNorskValuta(ubetaltBelop)}
-          sub={forfaltAntall > 0 ? `${forfaltAntall} forfalt` : "ubetalte fakturaer"}
-          advarsel={forfaltAntall > 0}
-        />
-        <StatKort
-          ikon={<Clock size={14} className="text-amber-600" />}
-          ikonBg="bg-amber-50"
-          label="Timer ufakturert"
-          verdi={`${timebankTotalt.toFixed(1)}t`}
-          sub={formatNorskValuta(timebankBelop)}
-        />
-        <StatKort
-          ikon={<CheckCircle2 size={14} className="text-slate-500" />}
-          ikonBg="bg-slate-100"
-          label="Oppdrag i dag"
-          verdi={String(planlagteIdag.length)}
-          sub="ikke kvittert"
-        />
+      {/* Toppkort */}
+      <div className="glass-card">
+        <div className="px-5 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(45,122,45,.12)" }}>
+          <p className="text-xs capitalize" style={{ color: "var(--text-dim)", letterSpacing: "0.5px" }}>
+            {dagensTittel}
+          </p>
+          <h1
+            className="text-2xl mt-0.5"
+            style={{ fontFamily: "var(--font-cinzel)", color: "rgba(232,213,160,0.92)", letterSpacing: "0.5px" }}
+          >
+            Dashbord
+          </h1>
+        </div>
+
+        {/* Nøkkeltall */}
+        <div className="grid grid-cols-2 gap-px" style={{ background: "rgba(45,122,45,.12)" }}>
+          <StatKort
+            ikon={<TrendingUp size={13} style={{ stroke: "#c9a84c", fill: "none" }} />}
+            label={`Inntekt ${ar}`}
+            verdi={formatNorskValuta(ytdInntekt)}
+            sub="sendte + betalte"
+          />
+          <StatKort
+            ikon={<AlertCircle size={13} style={{ stroke: forfaltAntall > 0 ? "#f87171" : "#c9a84c", fill: "none" }} />}
+            label="Utestående"
+            verdi={formatNorskValuta(ubetaltBelop)}
+            sub={forfaltAntall > 0 ? `${forfaltAntall} forfalt` : "ubetalte fakturaer"}
+            advarsel={forfaltAntall > 0}
+          />
+          <StatKort
+            ikon={<Clock size={13} style={{ stroke: "#c9a84c", fill: "none" }} />}
+            label="Timer ufakturert"
+            verdi={`${timebankTotalt.toFixed(1)}t`}
+            sub={formatNorskValuta(timebankBelop)}
+          />
+          <StatKort
+            ikon={<CheckCircle2 size={13} style={{ stroke: "rgba(120,180,120,0.6)", fill: "none" }} />}
+            label="Oppdrag i dag"
+            verdi={String(planlagteIdag.length)}
+            sub="planlagte"
+          />
+        </div>
+
+        {/* Handlingsknapper */}
+        <div className="flex gap-2.5 px-4 py-3">
+          <Link
+            href="/fakturaer/opprett"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-all"
+            style={{
+              background: "rgba(201,168,76,0.12)",
+              border: "1px solid rgba(201,168,76,0.28)",
+              color: "#c9a84c",
+            }}
+          >
+            <Plus size={15} strokeWidth={2} />
+            Ny faktura
+          </Link>
+          <Link
+            href="/fakturaer"
+            className="flex-1 flex items-center justify-center py-2.5 rounded-xl text-sm transition-all"
+            style={{
+              background: "rgba(8,22,8,0.5)",
+              border: "1px solid rgba(45,122,45,0.18)",
+              color: "var(--text-dim)",
+            }}
+          >
+            Se alle
+          </Link>
+        </div>
       </div>
 
       {/* Budsjett */}
-      <div className="mb-6">
-        <BudsjettWidget ytdInntekt={ytdInntekt} aar={ar} />
-      </div>
+      <BudsjettWidget ytdInntekt={ytdInntekt} aar={ar} />
 
       {/* Ukeoversikt */}
-      <section className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Denne uken</h2>
-          <Link href="/timer" className="text-xs text-slate-400 hover:text-slate-700">Se alle →</Link>
+      <section>
+        <div className="flex items-center justify-between mb-2 px-1">
+          <span className="section-label">Denne uken</span>
+          <Link href="/timer" className="text-xs" style={{ color: "var(--text-dim)" }}>
+            Se alle →
+          </Link>
         </div>
 
         {ukeDager.size === 0 && (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center">
-            <p className="text-slate-400 text-sm">Ingen oppdrag denne uken.</p>
+          <div
+            className="rounded-2xl p-6 text-center"
+            style={{
+              background: "rgba(8,22,8,0.4)",
+              border: "1px dashed rgba(45,122,45,0.25)",
+            }}
+          >
+            <p className="text-sm" style={{ color: "var(--text-dim)" }}>Ingen oppdrag denne uken.</p>
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="flex flex-col gap-3">
           {Array.from(ukeDager.entries()).map(([dato, sesjoner]) => (
             <div key={dato}>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide capitalize mb-2">
+              <p className="text-xs font-semibold uppercase tracking-wide capitalize mb-1.5 px-1" style={{ color: "var(--text-dim)" }}>
                 {dagLabel(dato)}
               </p>
-              <div className="space-y-2">
+              <div className="glass-group flex flex-col">
                 {sesjoner.map((sesjon) => {
                   const kunde = sesjon.customers as { id: string; short_name: string; hourly_rate: string } | null;
                   const erPlanlagt = sesjon.status === "planned";
@@ -126,11 +167,12 @@ export default async function DashbordSide() {
                   return (
                     <div
                       key={sesjon.id}
-                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3"
+                      className="flex items-center justify-between px-4 py-3"
+                      style={{ borderBottom: "1px solid rgba(20,50,20,.4)" }}
                     >
                       <div>
-                        <p className="font-medium text-slate-900 text-sm">{kunde?.short_name}</p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{kunde?.short_name}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
                           {sesjon.planned_duration_h}t ·{" "}
                           {formatNorskValuta(Number(sesjon.planned_duration_h) * Number(kunde?.hourly_rate ?? 0))}
                         </p>
@@ -138,15 +180,27 @@ export default async function DashbordSide() {
                       {erPlanlagt && isToday(new Date(dato)) && (
                         <Link
                           href={`/timer/${sesjon.id}`}
-                          className="flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 transition-colors"
+                          className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium"
+                          style={{
+                            background: "rgba(201,168,76,0.12)",
+                            border: "1px solid rgba(201,168,76,0.25)",
+                            color: "#c9a84c",
+                          }}
                         >
-                          Kvittér <ChevronRight size={12} />
+                          Kvittér <ChevronRight size={11} />
                         </Link>
                       )}
                       {erPlanlagt && !isToday(new Date(dato)) && (
-                        <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Planlagt</span>
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-full"
+                          style={{ background: "rgba(45,122,45,0.12)", color: "var(--text-dim)" }}
+                        >
+                          Planlagt
+                        </span>
                       )}
-                      {erFerdig && <CheckCircle2 size={18} className="text-green-500" />}
+                      {erFerdig && (
+                        <CheckCircle2 size={17} style={{ stroke: "#4ade80", fill: "none" }} />
+                      )}
                     </div>
                   );
                 })}
@@ -160,24 +214,39 @@ export default async function DashbordSide() {
 }
 
 function StatKort({
-  ikon, ikonBg, label, verdi, sub, advarsel,
+  ikon, label, verdi, sub, advarsel,
 }: {
   ikon: React.ReactNode;
-  ikonBg: string;
   label: string;
   verdi: string;
   sub: string;
   advarsel?: boolean;
 }) {
   return (
-    <div className={`rounded-xl border p-4 shadow-sm flex flex-col gap-2 ${advarsel ? "border-red-200 bg-red-50" : "border-slate-200 bg-white"}`}>
-      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${ikonBg}`}>
+    <div className="flex flex-col gap-2 p-4" style={{ background: "rgba(8,22,8,0.35)" }}>
+      <div
+        className="w-6 h-6 rounded-lg flex items-center justify-center"
+        style={{
+          background: advarsel ? "rgba(239,68,68,0.10)" : "rgba(201,168,76,0.10)",
+          border: advarsel ? "1px solid rgba(239,68,68,0.20)" : "1px solid rgba(201,168,76,0.18)",
+        }}
+      >
         {ikon}
       </div>
       <div>
-        <p className="text-xs text-slate-500 font-medium">{label}</p>
-        <p className={`text-xl font-bold mt-0.5 leading-tight ${advarsel ? "text-red-700" : "text-slate-900"}`}>{verdi}</p>
-        <p className={`text-xs mt-0.5 ${advarsel ? "text-red-500" : "text-slate-400"}`}>{sub}</p>
+        <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>{label}</p>
+        <p
+          className="text-lg mt-0.5 leading-tight"
+          style={{
+            fontFamily: "var(--font-cinzel)",
+            color: advarsel ? "#f87171" : "#c9a84c",
+          }}
+        >
+          {verdi}
+        </p>
+        <p className="text-xs mt-0.5" style={{ color: advarsel ? "rgba(248,113,113,0.65)" : "var(--text-dim)" }}>
+          {sub}
+        </p>
       </div>
     </div>
   );

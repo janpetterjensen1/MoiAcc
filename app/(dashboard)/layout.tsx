@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { loggUt } from "@/app/actions/auth";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
-import { ProfilKnapp } from "@/components/ProfilKnapp";
 import { DashboardNav, DashboardNavMobile } from "@/components/DashboardNav";
 
 export default async function DashboardLayout({
@@ -28,68 +27,98 @@ export default async function DashboardLayout({
   const initial = (visningsnavn || user.email || "?")[0].toUpperCase();
 
   return (
-    <div className="min-h-screen flex bg-slate-50">
-      {/* Sidebar (desktop) */}
-      <aside className="hidden md:flex w-56 flex-col fixed inset-y-0 bg-slate-900 text-slate-100">
-        <div className="px-5 py-5 border-b border-slate-800">
-          <span className="text-lg font-bold tracking-tight">MoiAcc</span>
+    <div className="min-h-screen flex relative">
+      {/* Ambient glows */}
+      <div className="ambient ambient-1" />
+      <div className="ambient ambient-2" />
+      <div className="ambient ambient-3" />
+
+      {/* Desktop sidebar */}
+      <aside
+        className="hidden md:flex w-60 flex-col fixed inset-y-0 z-20"
+        style={{
+          background: "rgba(4,10,4,0.90)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          borderRight: "1px solid rgba(201,168,76,0.12)",
+        }}
+      >
+        {/* Logo */}
+        <div className="px-5 py-5" style={{ borderBottom: "1px solid rgba(201,168,76,0.10)" }}>
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+              style={{
+                background: "rgba(201,168,76,0.12)",
+                border: "1px solid rgba(201,168,76,0.25)",
+              }}
+            >
+              <span style={{ fontFamily: "var(--font-cinzel)", fontSize: "15px", color: "#c9a84c" }}>M</span>
+            </div>
+            <span style={{ fontFamily: "var(--font-cinzel)", fontSize: "16px", color: "rgba(232,213,160,0.92)", letterSpacing: "1px" }}>
+              MoiAcc
+            </span>
+          </div>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        {/* Nav items */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           <DashboardNav />
         </nav>
 
-        {/* Profil + logg ut (sidebar) */}
-        <div className="px-3 py-4 border-t border-slate-800 space-y-1">
+        {/* User + logout */}
+        <div className="px-3 py-4 space-y-0.5" style={{ borderTop: "1px solid rgba(201,168,76,0.10)" }}>
           <Link
             href="/profil"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors group"
+            className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all"
+            style={{ color: "rgba(168,216,168,0.6)" }}
           >
-            <div className="w-7 h-7 rounded-full bg-slate-600 group-hover:bg-slate-500 overflow-hidden flex items-center justify-center shrink-0 ring-1 ring-slate-700">
+            <div
+              className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center shrink-0"
+              style={{
+                background: "rgba(201,168,76,0.12)",
+                border: "1px solid rgba(201,168,76,0.20)",
+              }}
+            >
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-xs font-semibold text-white">{initial}</span>
+                <span style={{ fontFamily: "var(--font-cinzel)", fontSize: "11px", color: "#c9a84c" }}>{initial}</span>
               )}
             </div>
-            <span className="text-sm text-slate-300 group-hover:text-white truncate">
-              {visningsnavn || user.email}
-            </span>
+            <span className="text-sm truncate">{visningsnavn || user.email}</span>
           </Link>
           <form action={loggUt}>
             <button
               type="submit"
-              className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+              className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm transition-all"
+              style={{ color: "rgba(120,180,120,0.45)" }}
             >
-              <LogOut size={16} />
+              <LogOut size={14} />
               Logg ut
             </button>
           </form>
         </div>
       </aside>
 
-      {/* Mobilheader */}
-      <header className="md:hidden fixed top-0 inset-x-0 z-10 h-14 bg-slate-900 text-white flex items-center justify-between px-4">
-        <span className="font-bold text-sm">MoiAcc</span>
-        <ProfilKnapp initial={initial} avatarUrl={avatarUrl} visningsnavn={visningsnavn || user.email} />
-        <form action={loggUt}>
-          <button type="submit" className="p-2 text-slate-300 hover:text-white">
-            <LogOut size={18} />
-          </button>
-        </form>
-      </header>
-
-      {/* Mobilnavigasjon */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-10 bg-slate-900 border-t border-slate-800 overflow-x-auto">
-        <div className="flex justify-around min-w-max w-full px-1 py-1">
-          <DashboardNavMobile />
-        </div>
+      {/* Mobile bottom nav */}
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-20 flex"
+        style={{
+          background: "rgba(4,10,4,0.92)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          borderTop: "1px solid rgba(201,168,76,0.12)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
+        <DashboardNavMobile />
       </nav>
 
-      {/* Innhold */}
-      <main className="flex-1 md:ml-56 pt-14 md:pt-0 pb-20 md:pb-0">
-        <div className="max-w-5xl mx-auto px-4 py-6">{children}</div>
+      {/* Main content */}
+      <main className="flex-1 md:ml-60 pb-24 md:pb-0 relative z-10">
+        <div className="max-w-2xl mx-auto px-4 py-6">{children}</div>
       </main>
     </div>
   );

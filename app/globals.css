@@ -1,26 +1,142 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-dm-sans);
+  --font-display: var(--font-cinzel);
+
+  --color-gold: #c9a84c;
+  --color-gold-dim: rgba(201, 168, 76, 0.55);
+  --color-gold-faint: rgba(201, 168, 76, 0.12);
+  --color-green-deep: #060f06;
+  --color-green-dark: #0a1a0a;
+  --color-green-mid: #0f2010;
+  --color-green-accent: #2d7a2d;
+  --color-text-warm: rgba(232, 213, 160, 0.92);
+  --color-text-sage: rgba(168, 216, 168, 0.6);
+  --color-text-dim: rgba(120, 180, 120, 0.5);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --gold: #c9a84c;
+  --gold-dim: rgba(201, 168, 76, 0.55);
+  --gold-faint: rgba(201, 168, 76, 0.12);
+  --green-deep: #060f06;
+  --green-dark: #0a1a0a;
+  --green-mid: #0f2010;
+  --green-accent: #2d7a2d;
+  --text-primary: rgba(232, 213, 160, 0.92);
+  --text-secondary: rgba(168, 216, 168, 0.6);
+  --text-dim: rgba(120, 180, 120, 0.5);
+  --border: rgba(45, 122, 45, 0.18);
+  --border-gold: rgba(201, 168, 76, 0.18);
+  --glass-bg: rgba(10, 28, 10, 0.55);
+  --glass-panel: rgba(8, 22, 8, 0.5);
+}
+
+html {
+  min-height: 100%;
+  background-image: radial-gradient(ellipse at 20% 20%, #0d2e0d 0%, #060f06 40%, #020808 100%);
+  background-attachment: fixed;
+  background-size: cover;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-dm-sans), 'DM Sans', sans-serif;
+  background: transparent;
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* Ambient glow blobs */
+.ambient {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.ambient-1 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(45,122,45,.14) 0%, transparent 70%);
+  top: -150px; left: -150px;
+}
+.ambient-2 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(201,168,76,.08) 0%, transparent 70%);
+  bottom: -80px; right: -80px;
+}
+.ambient-3 {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, rgba(20,80,20,.09) 0%, transparent 70%);
+  top: 50%; right: 5%; transform: translateY(-50%);
+}
+
+/* Glass card */
+.glass-card {
+  border-radius: 20px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(32px) saturate(1.4);
+  -webkit-backdrop-filter: blur(32px) saturate(1.4);
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 0 0 1px rgba(45,122,45,.08), 0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(201,168,76,.10);
+  overflow: hidden;
+  position: relative;
+}
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,.4), transparent);
+  pointer-events: none;
+}
+
+/* Glass group panel */
+.glass-group {
+  border-radius: 14px;
+  background: var(--glass-panel);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Section label */
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: rgba(45, 122, 45, 0.7);
+  padding: 0 2px;
+}
+
+/* Cinzel heading */
+.font-cinzel {
+  font-family: var(--font-cinzel), 'Cinzel', serif;
+}
+
+/* Status badges */
+.badge-emerald {
+  background: rgba(34, 197, 94, 0.10);
+  border: 1px solid rgba(34, 197, 94, 0.20);
+  color: #4ade80;
+}
+.badge-gold {
+  background: rgba(201, 168, 76, 0.12);
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  color: var(--gold);
+}
+.badge-red {
+  background: rgba(239, 68, 68, 0.10);
+  border: 1px solid rgba(239, 68, 68, 0.20);
+  color: #f87171;
+}
+.badge-muted {
+  background: rgba(45, 122, 45, 0.10);
+  border: 1px solid rgba(45, 122, 45, 0.18);
+  color: var(--text-dim);
+}
+.badge-purple {
+  background: rgba(168, 85, 247, 0.10);
+  border: 1px solid rgba(168, 85, 247, 0.20);
+  color: #c084fc;
 }

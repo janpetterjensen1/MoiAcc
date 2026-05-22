@@ -41,18 +41,25 @@ export function BudsjettWidget({ ytdInntekt, aar }: Props) {
   const mangler = Math.max(0, maal - ytdInntekt);
   const mndBehov = mndGjenstaende > 0 ? Math.ceil(mangler / mndGjenstaende) : 0;
 
-  const fargeBar = prosent >= 100 ? "bg-emerald-500" : prosent >= 60 ? "bg-blue-500" : prosent >= 30 ? "bg-amber-400" : "bg-slate-300";
+  const barFarge = prosent >= 100 ? "#4ade80" : prosent >= 60 ? "#c9a84c" : prosent >= 30 ? "rgba(201,168,76,0.5)" : "rgba(45,122,45,0.4)";
 
   if (maal === 0 && !redigerer) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-slate-400">
-          <Target size={16} />
-          <span className="text-sm">Sett inntektsmål for {aar}</span>
+      <div
+        className="rounded-2xl p-4 flex items-center justify-between"
+        style={{
+          background: "rgba(8,22,8,0.45)",
+          border: "1px dashed rgba(45,122,45,0.25)",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <Target size={15} style={{ stroke: "rgba(120,180,120,0.4)", fill: "none" }} />
+          <span className="text-sm" style={{ color: "var(--text-dim)" }}>Sett inntektsmål for {aar}</span>
         </div>
         <button
           onClick={() => setRedigerer(true)}
-          className="text-xs text-slate-600 underline hover:text-slate-900"
+          className="text-xs"
+          style={{ color: "rgba(201,168,76,0.6)", textDecoration: "underline" }}
         >
           Legg til
         </button>
@@ -61,17 +68,30 @@ export function BudsjettWidget({ ytdInntekt, aar }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div
+      className="rounded-2xl p-4"
+      style={{
+        background: "rgba(8,22,8,0.50)",
+        border: "1px solid rgba(45,122,45,0.18)",
+        backdropFilter: "blur(12px)",
+      }}
+    >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
-          <div className="w-6 h-6 rounded-lg bg-violet-50 flex items-center justify-center">
-            <Target size={13} className="text-violet-600" />
+          <div
+            className="w-6 h-6 rounded-lg flex items-center justify-center"
+            style={{ background: "rgba(201,168,76,0.10)", border: "1px solid rgba(201,168,76,0.18)" }}
+          >
+            <Target size={13} style={{ stroke: "#c9a84c", fill: "none" }} />
           </div>
-          <span className="text-xs font-semibold text-slate-600">Inntektsmål {aar}</span>
+          <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+            Inntektsmål {aar}
+          </span>
         </div>
         <button
           onClick={() => setRedigerer(!redigerer)}
-          className="text-xs text-slate-400 hover:text-slate-700"
+          className="text-xs"
+          style={{ color: "var(--text-dim)" }}
         >
           {redigerer ? "Avbryt" : "Endre"}
         </button>
@@ -85,42 +105,53 @@ export function BudsjettWidget({ ytdInntekt, aar }: Props) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="f.eks. 800000"
-            className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-slate-400"
+            className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+            style={{
+              background: "rgba(10,28,10,0.6)",
+              border: "1px solid rgba(45,122,45,0.3)",
+              color: "var(--text-primary)",
+            }}
             onKeyDown={(e) => e.key === "Enter" && lagreMaal()}
             autoFocus
           />
           <button
             onClick={lagreMaal}
-            className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
+            className="rounded-xl px-4 py-2 text-sm font-medium"
+            style={{
+              background: "rgba(201,168,76,0.12)",
+              border: "1px solid rgba(201,168,76,0.28)",
+              color: "#c9a84c",
+            }}
           >
             Lagre
           </button>
         </div>
       ) : (
         <>
-          {/* Progress bar */}
           <div className="mb-2">
-            <div className="flex justify-between text-xs text-slate-500 mb-1">
+            <div className="flex justify-between text-xs mb-1.5" style={{ color: "var(--text-dim)" }}>
               <span>{kr(ytdInntekt)}</span>
-              <span className="font-medium">{prosent}%</span>
+              <span style={{ color: "#c9a84c", fontWeight: 500 }}>{prosent}%</span>
               <span>{kr(maal)}</span>
             </div>
-            <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div
+              className="h-1.5 rounded-full overflow-hidden"
+              style={{ background: "rgba(45,122,45,0.2)" }}
+            >
               <div
-                className={`h-full rounded-full transition-all ${fargeBar}`}
-                style={{ width: `${prosent}%` }}
+                className="h-full rounded-full transition-all"
+                style={{ width: `${prosent}%`, background: barFarge }}
               />
             </div>
           </div>
 
-          {/* Undertekst */}
           {mangler > 0 ? (
-            <p className="text-xs text-slate-500">
-              <span className="font-medium text-slate-700">{kr(mangler)}</span> gjenstår ·{" "}
-              ca. <span className="font-medium text-slate-700">{kr(mndBehov)}/mnd</span> de neste {mndGjenstaende} månedene
+            <p className="text-xs" style={{ color: "var(--text-dim)" }}>
+              <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>{kr(mangler)}</span> gjenstår ·{" "}
+              ca. <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>{kr(mndBehov)}/mnd</span> de neste {mndGjenstaende} månedene
             </p>
           ) : (
-            <p className="text-xs text-emerald-700 font-medium">✓ Inntektsmål nådd!</p>
+            <p className="text-xs font-medium" style={{ color: "#4ade80" }}>✓ Inntektsmål nådd!</p>
           )}
         </>
       )}

@@ -4,6 +4,7 @@ import { loggUt } from "@/app/actions/auth";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { DashboardNav, DashboardNavMobile } from "@/components/DashboardNav";
+import { GeofenceVakt } from "@/components/GeofenceVakt";
 
 export default async function DashboardLayout({
   children,
@@ -151,6 +152,9 @@ export default async function DashboardLayout({
       >
         <DashboardNavMobile />
       </nav>
+
+      {/* Geofence-overvåker — kjører i bakgrunn */}
+      <GeofenceVakt />
 
       {/* Main content */}
       <main className="flex-1 md:ml-60 pt-[52px] md:pt-0 pb-24 md:pb-0 relative z-10">

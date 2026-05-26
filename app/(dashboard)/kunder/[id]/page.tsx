@@ -5,6 +5,7 @@ import { hentKunde, hentKundeEndringslogg } from "@/lib/db/customers";
 import { KundeSkjema } from "@/components/kunde-skjema";
 import { oppdaterKundeAction } from "@/app/actions/customers";
 import { formatNorskDato } from "@/lib/utils";
+import { GeofenceKundePanel } from "@/components/GeofenceKundePanel";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -65,6 +66,13 @@ export default async function KundeDetaljSide({ params, searchParams }: Props) {
           }}
         />
       </div>
+
+      <GeofenceKundePanel
+        kundeId={id}
+        lat={(kunde as { lat?: number | null }).lat ?? null}
+        lng={(kunde as { lng?: number | null }).lng ?? null}
+        radiusM={(kunde as { geofence_radius_m?: number }).geofence_radius_m ?? 300}
+      />
 
       {logg && logg.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 p-6">

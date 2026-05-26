@@ -47,6 +47,7 @@ export async function genererAarsplanAction(ar: number) {
       customer_id: m.customer_id,
       weekday: m.weekday,
       duration_h: m.duration_h,
+      start_time: m.start_time ?? null,
     })),
     helligdager ?? [],
     ferieperioder ?? []
@@ -70,12 +71,13 @@ export async function lagreUkemonsterAction(formData: FormData) {
   const customerId = formData.get("customer_id") as string;
   const weekday = Number(formData.get("weekday"));
   const durationH = Number(formData.get("duration_h"));
+  const startTime = (formData.get("start_time") as string) || null;
 
   if (!customerId || !weekday || !durationH) {
     return { success: false, error: "Mangler felt" };
   }
 
-  const { error } = await lagreUkemonster(customerId, weekday, durationH);
+  const { error } = await lagreUkemonster(customerId, weekday, durationH, startTime);
   if (error) return { success: false, error: error.message };
 
   revalidatePath("/kalender");

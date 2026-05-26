@@ -10,6 +10,7 @@ interface WeekPattern {
   customer_id: string;
   weekday: number; // 1=mandag, 7=søndag
   duration_h: string;
+  start_time?: string | null; // "HH:MM:SS" fra DB
 }
 
 interface Customer {
@@ -54,6 +55,7 @@ export function genererAarsplan(
     customer_id: string;
     scheduled_date: string;
     planned_duration_h: number;
+    planned_start_time?: string | null;
     status: "planned" | "holiday" | "vacation";
     blocked_reason?: string;
     is_public_holiday?: boolean;
@@ -76,12 +78,15 @@ export function genererAarsplan(
       const monster = kundeMonster.find((m) => m.weekday === ukedag);
       if (!monster) continue;
 
+      const startTid = monster.start_time ?? null;
+
       // Helligdag?
       if (helligdagSet.has(datoStr)) {
         sesjoner.push({
           customer_id: kunde.id,
           scheduled_date: datoStr,
           planned_duration_h: Number(monster.duration_h),
+          planned_start_time: startTid,
           status: "holiday",
           blocked_reason: helligdagNavn.get(datoStr),
           is_public_holiday: true,
@@ -101,6 +106,7 @@ export function genererAarsplan(
           customer_id: kunde.id,
           scheduled_date: datoStr,
           planned_duration_h: Number(monster.duration_h),
+          planned_start_time: startTid,
           status: "vacation",
           blocked_reason: ferie.description,
         });
@@ -112,6 +118,7 @@ export function genererAarsplan(
         customer_id: kunde.id,
         scheduled_date: datoStr,
         planned_duration_h: Number(monster.duration_h),
+        planned_start_time: startTid,
         status: "planned",
       });
     }

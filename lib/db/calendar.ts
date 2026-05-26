@@ -46,6 +46,7 @@ export interface UkemonsterMedKunde {
   customer_id: string;
   weekday: number;
   duration_h: string;
+  start_time: string | null; // "HH:MM:SS"
   notes: string | null;
   customers: { id: string; short_name: string; active_from: string; active_to: string | null } | null;
 }
@@ -71,13 +72,14 @@ export async function hentUkemonstrerForKunde(customerId: string) {
 export async function lagreUkemonster(
   customerId: string,
   weekday: number,
-  durationH: number
+  durationH: number,
+  startTime?: string | null
 ) {
   const supabase = await createClient();
   return supabase
     .from("week_patterns")
     .upsert(
-      { customer_id: customerId, weekday, duration_h: durationH },
+      { customer_id: customerId, weekday, duration_h: durationH, start_time: startTime ?? null },
       { onConflict: "customer_id,weekday" }
     );
 }
@@ -114,6 +116,7 @@ export async function opprettPlanlagteSesjoner(
     customer_id: string;
     scheduled_date: string;
     planned_duration_h: number;
+    planned_start_time?: string | null;
     status: "planned" | "holiday" | "vacation";
     blocked_reason?: string;
     is_public_holiday?: boolean;

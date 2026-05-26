@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { opprettKunde, oppdaterKunde, hentKunde, loggKundeEndring } from "@/lib/db/customers";
@@ -155,4 +156,32 @@ export async function oppdaterKundeAction(id: string, formData: FormData) {
 
 export async function slaOppBrregAction(orgnr: string) {
   return slaOppOrgnummer(orgnr);
+}
+
+export async function lagreBesoksadresseAction(
+  kundeId: string,
+  formData: FormData
+): Promise<{ ok: true } | { ok: false; feil: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, feil: "Ikke innlogget" };
+
+  const street = (formData.get("visit_street") as string)?.trim();
+  const postal_code = (formData.get("visit_postal_code") as string)?.trim();
+  const city = (formData.get("visit_city") as string)?.trim();
+
+  if (!street || !postal_code || !city) {
+    return { ok: false, feil: "Fyll inn gate, postnummer og poststed" };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from("customers")
+    .update({ visit_address: { street, postal_code, city } })
+    .eq("id", kundeId);
+
+  if (error) return { ok: false, feil: error.message };
+
+  revalidatePath(`/kunder/${kundeId}`);
+  return { ok: true };
 }

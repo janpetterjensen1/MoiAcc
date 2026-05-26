@@ -15,13 +15,15 @@ export async function geocodeKundeAction(kundeId: string): Promise<
 
   const { data: kunde, error } = await supabase
     .from("customers")
-    .select("invoice_address, short_name")
+    .select("invoice_address, visit_address, short_name")
     .eq("id", kundeId)
     .single();
 
   if (error || !kunde) return { ok: false, feil: "Fant ikke kunden" };
 
-  const adr = kunde.invoice_address as { street: string; postal_code: string; city: string };
+  // Bruk besøksadresse hvis satt, ellers fakturaadresse
+  const visitAdr = kunde.visit_address as { street: string; postal_code: string; city: string } | null;
+  const adr = visitAdr ?? (kunde.invoice_address as { street: string; postal_code: string; city: string });
   const query = encodeURIComponent(`${adr.street}, ${adr.postal_code} ${adr.city}, Norway`);
   const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
 

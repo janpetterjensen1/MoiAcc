@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { MapPin, CheckCircle2, X, Loader2, Navigation } from "lucide-react";
+import { useEffect, useRef, useState, useTransition, useCallback } from "react";
+import { MapPin, CheckCircle2, X, Loader2, Navigation, Clock } from "lucide-react";
 import { hentDagensGeoSesjoner, autoKvitterAction } from "@/app/actions/geofence";
 import { format } from "date-fns";
 
@@ -10,12 +10,13 @@ interface GeoSesjon {
   customer_id: string;
   short_name: string;
   planned_duration_h: number;
+  planned_start_time: string | null;
   lat: number;
   lng: number;
   geofence_radius_m: number;
 }
 
-/** Haversine-formel: avstand i meter mellom to GPS-koordinater */
+/** Haversine-formel: avstand i meter */
 function avstandMeter(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -28,18 +29,72 @@ function avstandMeter(lat1: number, lng1: number, lat2: number, lng2: number): n
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/**
+ * Beregn tidspunkt for midtpunktsjekk (ms fra nå).
+ * Returnerer null hvis allerede passert eller starttid mangler.
+ */
+function beregnMidtpunktMs(sesjon: GeoSesjon): number | null {
+  if (!sesjon.planned_start_time) return null;
+
+  const [h, m] = sesjon.planned_start_time.split(":").map(Number);
+  const iDag = new Date();
+  const start = new Date(iDag);
+  start.setHours(h, m, 0, 0);
+
+  const sluttMs = start.getTime() + sesjon.planned_duration_h * 3600 * 1000;
+  const midtMs = start.getTime() + (sluttMs - start.getTime()) / 2;
+  const naa = Date.now();
+
+  // Allerede passert?
+  if (midtMs <= naa) return null;
+
+  return midtMs - naa;
+}
+
+/** Formater "HH:MM" til "kl. 12:45" */
+function formatKl(sesjon: GeoSesjon): string {
+  if (!sesjon.planned_start_time) return "";
+  const [h, m] = sesjon.planned_start_time.split(":").map(Number);
+  const start = new Date();
+  start.setHours(h, m, 0, 0);
+  const slutt = new Date(start.getTime() + sesjon.planned_duration_h * 3600 * 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const midtH = new Date(start.getTime() + (slutt.getTime() - start.getTime()) / 2);
+  return `${pad(start.getHours())}:${pad(start.getMinutes())}–${pad(slutt.getHours())}:${pad(slutt.getMinutes())} · sjekk kl. ${pad(midtH.getHours())}:${pad(midtH.getMinutes())}`;
+}
+
 export function GeofenceVakt() {
   const [sesjoner, setSesjoner] = useState<GeoSesjon[]>([]);
   const [funnet, setFunnet] = useState<GeoSesjon | null>(null);
   const [avvist, setAvvist] = useState<Set<string>>(new Set());
   const [kvittert, setKvittert] = useState<Set<string>>(new Set());
-  const [status, setStatus] = useState<"idle" | "watching" | "denied">("idle");
   const [isPending, startTransition] = useTransition();
-  const [suksess, setSuksess] = useState(false);
-  const watchRef = useRef<number | null>(null);
+  const [suksess, setSuksess] = useState<string | null>(null);
+  const [swRegistrert, setSwRegistrert] = useState(false);
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const sesjonerRef = useRef<GeoSesjon[]>([]);
 
-  // Last dagens sesjoner med koordinater
+  // ── Registrer Service Worker ──────────────────────────────────────────────
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          setSwRegistrert(true);
+          // Lyt på meldinger fra SW (notifikasjonsklikk → sjekk nå)
+          navigator.serviceWorker.addEventListener("message", (e) => {
+            if (e.data?.type === "GEOFENCE_CHECK_NOW") {
+              const sesjon = sesjonerRef.current.find((s) => s.id === e.data.sesjonId);
+              if (sesjon) utforGeoSjekk(sesjon);
+            }
+          });
+        })
+        .catch(() => {}); // Ikke kritisk
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Last dagens sesjoner ──────────────────────────────────────────────────
   useEffect(() => {
     hentDagensGeoSesjoner().then((data) => {
       setSesjoner(data);
@@ -47,47 +102,127 @@ export function GeofenceVakt() {
     });
   }, []);
 
-  // Start GPS-overvåking
+  // ── Be om notifikasjonstillatelse ─────────────────────────────────────────
   useEffect(() => {
-    if (!navigator.geolocation || sesjoner.length === 0) return;
+    if (sesjoner.length === 0) return;
+    const harStarttid = sesjoner.some((s) => s.planned_start_time);
+    if (!harStarttid) return;
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, [sesjoner]);
 
-    setStatus("watching");
+  // ── GPS-sjekk for én sesjon ───────────────────────────────────────────────
+  const utforGeoSjekk = useCallback((sesjon: GeoSesjon) => {
+    if (avvist.has(sesjon.id) || kvittert.has(sesjon.id)) return;
 
-    const sjekkPosisjon = (pos: GeolocationPosition) => {
-      const { latitude, longitude } = pos.coords;
-      const dagStr = format(new Date(), "yyyy-MM-dd");
-
-      for (const sesjon of sesjonerRef.current) {
-        // Hopp over allerede avviste eller kvitterte
-        if (avvist.has(sesjon.id) || kvittert.has(sesjon.id)) continue;
-
-        const dist = avstandMeter(latitude, longitude, sesjon.lat, sesjon.lng);
-
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const dist = avstandMeter(
+          pos.coords.latitude,
+          pos.coords.longitude,
+          sesjon.lat,
+          sesjon.lng
+        );
         if (dist <= sesjon.geofence_radius_m) {
-          // Sjekk at det er passert rimelig tid på dagen (kl 10+)
-          const time = new Date().getHours();
-          if (time >= 10) {
-            setFunnet({ ...sesjon });
+          // Innenfor radius → vis dialog
+          setFunnet(sesjon);
+        }
+        // Utenfor radius → stille, ingen dialog
+      },
+      () => {
+        // GPS-feil → stille
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [avvist, kvittert]);
+
+  // ── Sett opp midtpunkts-timere ────────────────────────────────────────────
+  useEffect(() => {
+    // Rydd gamle timere
+    timersRef.current.forEach((t) => clearTimeout(t));
+    timersRef.current.clear();
+
+    for (const sesjon of sesjoner) {
+      if (avvist.has(sesjon.id) || kvittert.has(sesjon.id)) continue;
+
+      const msIgjen = beregnMidtpunktMs(sesjon);
+
+      if (msIgjen === null) {
+        // Ingen starttid satt: fall tilbake til kontinuerlig watchPosition
+        continue;
+      }
+
+      const timer = setTimeout(() => {
+        // Midtpunktet nådd
+        if (avvist.has(sesjon.id) || kvittert.has(sesjon.id)) return;
+
+        // Prøv GPS-sjekk
+        if (navigator.geolocation) {
+          utforGeoSjekk(sesjon);
+        }
+
+        // Vis lokal notifikasjon (fungerer selv om app er minimert)
+        if (
+          swRegistrert &&
+          "Notification" in window &&
+          Notification.permission === "granted"
+        ) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification(`MoiAcc — ${sesjon.short_name}`, {
+              body: `Midtpunktssjekk for ${sesjon.planned_duration_h}t oppdrag. Er du der? Trykk for å kvittere.`,
+              icon: "/icons/icon-192x192.png",
+              badge: "/icons/icon-72x72.png",
+              // @ts-expect-error – requireInteraction er gyldig
+              requireInteraction: true,
+              data: { sesjonId: sesjon.id },
+            });
+          });
+        }
+      }, msIgjen);
+
+      timersRef.current.set(sesjon.id, timer);
+    }
+
+    return () => {
+      timersRef.current.forEach((t) => clearTimeout(t));
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sesjoner, avvist, kvittert, swRegistrert]);
+
+  // ── Fallback: watchPosition for sesjoner uten starttid ───────────────────
+  useEffect(() => {
+    const utenTid = sesjoner.filter((s) => !s.planned_start_time);
+    if (!navigator.geolocation || utenTid.length === 0) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const naa = new Date().getHours();
+        if (naa < 10) return;
+        for (const sesjon of utenTid) {
+          if (avvist.has(sesjon.id) || kvittert.has(sesjon.id)) continue;
+          const dist = avstandMeter(
+            pos.coords.latitude,
+            pos.coords.longitude,
+            sesjon.lat,
+            sesjon.lng
+          );
+          if (dist <= sesjon.geofence_radius_m) {
+            setFunnet(sesjon);
             return;
           }
         }
-      }
-    };
-
-    watchRef.current = navigator.geolocation.watchPosition(
-      sjekkPosisjon,
-      (err) => {
-        if (err.code === err.PERMISSION_DENIED) setStatus("denied");
       },
+      () => {},
       { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 }
     );
 
-    return () => {
-      if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sesjoner]);
+    return () => navigator.geolocation.clearWatch(watchId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sesjoner, avvist, kvittert]);
 
+  // ── Handlinger ────────────────────────────────────────────────────────────
   function avvis() {
     if (!funnet) return;
     setAvvist((prev) => new Set(prev).add(funnet.id));
@@ -97,26 +232,25 @@ export function GeofenceVakt() {
   function bekreft() {
     if (!funnet) return;
     const dagStr = format(new Date(), "yyyy-MM-dd");
+    const sesjonSnapshot = funnet;
     startTransition(async () => {
       const res = await autoKvitterAction(
-        funnet.id,
-        funnet.customer_id,
+        sesjonSnapshot.id,
+        sesjonSnapshot.customer_id,
         dagStr,
-        funnet.planned_duration_h
+        sesjonSnapshot.planned_duration_h
       );
       if (res.ok) {
-        setKvittert((prev) => new Set(prev).add(funnet.id));
-        setSuksess(true);
+        setKvittert((prev) => new Set(prev).add(sesjonSnapshot.id));
+        setSuksess(sesjonSnapshot.short_name);
         setFunnet(null);
-        setTimeout(() => setSuksess(false), 4000);
-        // Fjern fra listen
-        setSesjoner((prev) => prev.filter((s) => s.id !== funnet.id));
-        sesjonerRef.current = sesjonerRef.current.filter((s) => s.id !== funnet.id);
+        setSesjoner((prev) => prev.filter((s) => s.id !== sesjonSnapshot.id));
+        sesjonerRef.current = sesjonerRef.current.filter((s) => s.id !== sesjonSnapshot.id);
+        setTimeout(() => setSuksess(null), 5000);
       }
     });
   }
 
-  // Ingenting å vise
   if (!funnet && !suksess) return null;
 
   return (
@@ -124,34 +258,30 @@ export function GeofenceVakt() {
       {/* Suksess-toast */}
       {suksess && (
         <div
-          className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl shadow-xl text-sm font-medium"
-          style={{ background: "#0d3d35", color: "#7de8d0", border: "1px solid rgba(125,232,208,0.3)" }}
+          className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-2xl shadow-xl text-sm font-medium whitespace-nowrap"
+          style={{ background: "rgba(13,61,53,0.97)", color: "#7de8d0", border: "1px solid rgba(125,232,208,0.3)" }}
         >
           <CheckCircle2 size={16} />
-          Sesjon auto-kvittert!
+          {suksess} — auto-kvittert ✓
         </div>
       )}
 
       {/* Geofence-dialog */}
       {funnet && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-0">
-          {/* Bakgrunnsoverlay */}
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
           <div
             className="absolute inset-0"
-            style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)" }}
             onClick={avvis}
           />
-
-          {/* Dialogboks */}
           <div
-            className="relative w-full max-w-sm rounded-3xl p-6 shadow-2xl sm:mx-auto"
+            className="relative w-full max-w-sm rounded-3xl p-6 shadow-2xl"
             style={{
-              background: "rgba(4,10,4,0.96)",
-              border: "1px solid rgba(201,168,76,0.25)",
+              background: "rgba(4,10,4,0.97)",
+              border: "1px solid rgba(201,168,76,0.28)",
               backdropFilter: "blur(24px)",
             }}
           >
-            {/* Lukk-knapp */}
             <button
               onClick={avvis}
               className="absolute top-4 right-4 opacity-40 hover:opacity-80 transition-opacity"
@@ -170,25 +300,36 @@ export function GeofenceVakt() {
 
             {/* Tekst */}
             <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(201,168,76,0.6)" }}>
-              Geofence oppdaget
+              Midtpunkt nådd · Geofence ✓
             </p>
             <h2 className="text-lg font-bold mb-1" style={{ color: "rgba(232,213,160,0.95)" }}>
               Du er ved {funnet.short_name}
             </h2>
-            <p className="text-sm mb-5" style={{ color: "rgba(168,216,168,0.55)" }}>
-              Vil du kvittere for dagens sesjon på{" "}
-              <span style={{ color: "rgba(232,213,160,0.8)" }}>
+            <p className="text-sm mb-2" style={{ color: "rgba(168,216,168,0.55)" }}>
+              Vil du kvittere for{" "}
+              <span style={{ color: "rgba(232,213,160,0.85)" }}>
                 {funnet.planned_duration_h} timer
-              </span>
-              ?
+              </span>{" "}
+              som utført?
             </p>
 
-            {/* GPS-indikator */}
+            {/* Tidsinfo */}
+            {funnet.planned_start_time && (
+              <div
+                className="flex items-center gap-2 rounded-xl px-3 py-2 mb-2 text-xs"
+                style={{ background: "rgba(201,168,76,0.07)", border: "1px solid rgba(201,168,76,0.12)" }}
+              >
+                <Clock size={11} style={{ color: "#c9a84c" }} />
+                <span style={{ color: "rgba(168,216,168,0.5)" }}>{formatKl(funnet)}</span>
+              </div>
+            )}
+
+            {/* GPS-info */}
             <div
               className="flex items-center gap-2 rounded-xl px-3 py-2 mb-5 text-xs"
               style={{ background: "rgba(201,168,76,0.07)", border: "1px solid rgba(201,168,76,0.12)" }}
             >
-              <MapPin size={12} style={{ color: "#c9a84c" }} />
+              <MapPin size={11} style={{ color: "#c9a84c" }} />
               <span style={{ color: "rgba(168,216,168,0.5)" }}>
                 Innenfor {funnet.geofence_radius_m} m fra kundens adresse
               </span>
@@ -210,18 +351,14 @@ export function GeofenceVakt() {
               <button
                 onClick={bekreft}
                 disabled={isPending}
-                className="flex-2 flex-1 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+                className="flex-1 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
                 style={{
-                  background: isPending ? "rgba(201,168,76,0.3)" : "rgba(201,168,76,0.15)",
+                  background: isPending ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.15)",
                   border: "1px solid rgba(201,168,76,0.35)",
                   color: "#c9a84c",
                 }}
               >
-                {isPending ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <CheckCircle2 size={14} />
-                )}
+                {isPending ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                 Kvittér
               </button>
             </div>

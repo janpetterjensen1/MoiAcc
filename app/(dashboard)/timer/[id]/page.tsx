@@ -5,6 +5,7 @@ import { hentPlanlagtSesjon, hentTimebankForKunde } from "@/lib/db/sessions";
 import { kvitterFravar } from "@/app/actions/sessions";
 import { formatNorskDato, formatNorskValuta } from "@/lib/utils";
 import { KvitteringsSkjema } from "@/components/KvitteringsSkjema";
+import { StarttidKnapp } from "@/components/StarttidKnapp";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -94,6 +95,13 @@ export default async function KvitteringSide({ params, searchParams }: Props) {
               </p>
             </div>
           </div>
+
+          {/* Starttid for geofence */}
+          <StarttidKnapp
+            sesjonId={sesjon.id}
+            gjeldendeTid={(sesjon as { planned_start_time?: string | null }).planned_start_time ?? null}
+            varighetH={Number(sesjon.planned_duration_h)}
+          />
 
           {/* Kvitteringsskjema med stoppeklokke */}
           <KvitteringsSkjema

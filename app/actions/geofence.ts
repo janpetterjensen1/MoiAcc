@@ -76,7 +76,7 @@ export async function settKoordinaterAction(
 }
 
 /**
- * Hent dagens planlagte sesjoner med kundekoordinater — brukes av GeofenceVakt.
+ * Hent dagens planlagte sesjoner med kundekoordinater og starttid — brukes av GeofenceVakt.
  * Returnerer bare sesjoner med status "planned" som har koordinater satt.
  */
 export async function hentDagensGeoSesjoner(): Promise<{
@@ -84,6 +84,7 @@ export async function hentDagensGeoSesjoner(): Promise<{
   customer_id: string;
   short_name: string;
   planned_duration_h: number;
+  planned_start_time: string | null; // "HH:MM:SS" eller null
   lat: number;
   lng: number;
   geofence_radius_m: number;
@@ -97,6 +98,7 @@ export async function hentDagensGeoSesjoner(): Promise<{
       id,
       customer_id,
       planned_duration_h,
+      planned_start_time,
       customers!inner (short_name, lat, lng, geofence_radius_m)
     `)
     .eq("scheduled_date", dagStr)
@@ -112,10 +114,30 @@ export async function hentDagensGeoSesjoner(): Promise<{
       customer_id: r.customer_id,
       short_name: r.customers.short_name,
       planned_duration_h: Number(r.planned_duration_h),
+      planned_start_time: r.planned_start_time ?? null,
       lat: r.customers.lat,
       lng: r.customers.lng,
       geofence_radius_m: r.customers.geofence_radius_m ?? 300,
     }));
+}
+
+/**
+ * Sett starttidspunkt for en planlagt sesjon.
+ */
+export async function settStartidAction(
+  sesjonId: string,
+  startTid: string // "HH:MM"
+): Promise<{ ok: true } | { ok: false; feil: string }> {
+  const supabase = await createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from("scheduled_sessions")
+    .update({ planned_start_time: startTid })
+    .eq("id", sesjonId);
+
+  if (error) return { ok: false, feil: error.message };
+  revalidatePath("/timer");
+  return { ok: true };
 }
 
 /**

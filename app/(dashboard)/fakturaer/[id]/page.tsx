@@ -157,21 +157,20 @@ export default async function FakturaDetaljSide({ params }: Props) {
       {/* PDF-knapper */}
       <div className="flex justify-end gap-2 mb-4">
         <Link
-          href={`/api/invoice/${faktura.id}/pdf`}
-          target="_blank"
+          href={`/fakturaer/${faktura.id}/pdf-preview`}
           className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors"
         >
           <FileDown size={14} />
           Forhåndsvis
         </Link>
-        <Link
+        <a
           href={`/api/invoice/${faktura.id}/pdf?download=1`}
           className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors"
           download
         >
           <Download size={14} />
           Last ned PDF
-        </Link>
+        </a>
       </div>
 
       {/* Handlingsknapper */}

@@ -106,34 +106,34 @@ export function FakturaStatuslinje({ fakturaId, createdAt, sentAt, paidAt, statu
         <Steg label={erKreditert ? "Kreditert" : "Betalt"} dato={paidAt} ferdig={!!paidAt || erKreditert} farge={erKreditert ? "purple" : "green"} klikkbar={betalt_aktiv} stegId="betalt" />
       </div>
 
-      {/* Datoplukker — vises under tidslinjen, ingen klipping */}
+      {/* Datoplukker — vises under tidslinjen */}
       {apentSteg && (
-        <div className="mt-4 pt-4 border-t border-slate-100 flex items-end gap-3">
-          <div className="flex-1">
-            <p className="text-xs font-semibold text-slate-600 mb-1">
-              {apentSteg === "sendt" ? "Sendt dato" : "Betalt dato"}
-            </p>
-            <input
-              type="date"
-              value={valgtDato}
-              onChange={(e) => setValgtDato(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-            />
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+            {apentSteg === "sendt" ? "Registrer sendt dato" : "Registrer betalt dato"}
+          </p>
+          <input
+            type="date"
+            value={valgtDato}
+            onChange={(e) => setValgtDato(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 mb-3"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => setApentSteg(null)}
+              className="flex-1 py-2.5 rounded-lg text-sm font-medium text-slate-500 border border-slate-200 hover:bg-slate-50 transition-colors"
+            >
+              Avbryt
+            </button>
+            <button
+              onClick={bekreft}
+              disabled={isPending}
+              className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 flex items-center justify-center gap-1.5 transition-colors disabled:opacity-60"
+            >
+              {isPending && <Loader2 size={13} className="animate-spin" />}
+              Bekreft
+            </button>
           </div>
-          <button
-            onClick={() => setApentSteg(null)}
-            className="py-2 px-3 rounded-lg text-sm text-slate-500 border border-slate-200 hover:bg-slate-50"
-          >
-            Avbryt
-          </button>
-          <button
-            onClick={bekreft}
-            disabled={isPending}
-            className="py-2 px-4 rounded-lg text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 flex items-center gap-1.5 disabled:opacity-60"
-          >
-            {isPending && <Loader2 size={13} className="animate-spin" />}
-            Bekreft
-          </button>
         </div>
       )}
     </div>

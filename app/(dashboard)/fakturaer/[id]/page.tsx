@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, AlertTriangle, FileDown, Download, Circle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, AlertTriangle, Download, Circle, Eye } from "lucide-react";
 import { hentFaktura, hentFakturaLinjer } from "@/lib/db/invoices";
 import { formatNorskDato, formatNorskValuta } from "@/lib/utils";
 import { GodkjennKnapp } from "./godkjenn-knapp";
@@ -156,20 +156,20 @@ export default async function FakturaDetaljSide({ params }: Props) {
 
       {/* PDF-knapper */}
       <div className="flex justify-end gap-2 mb-4">
-        <Link
-          href={`/fakturaer/${faktura.id}/pdf-preview`}
+        <a
+          href={`/api/invoice/${faktura.id}/pdf`}
           className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors"
         >
-          <FileDown size={14} />
-          Forhåndsvis
-        </Link>
+          <Eye size={14} />
+          Forhåndsvis PDF
+        </a>
         <a
           href={`/api/invoice/${faktura.id}/pdf?download=1`}
           className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors"
           download
         >
           <Download size={14} />
-          Last ned PDF
+          Last ned
         </a>
       </div>
 

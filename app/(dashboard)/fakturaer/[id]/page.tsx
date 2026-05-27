@@ -121,7 +121,11 @@ export default async function FakturaDetaljSide({ params }: Props) {
                     ? linje.note.split("|")[1]
                     : (linje.note && !linje.note.startsWith("__"))
                       ? linje.note
-                      : "Undervisning"}
+                      : Number(linje.actual_duration_h) === 1.5
+                        ? "Spinning 90 min"
+                        : Number(linje.actual_duration_h) === 2.5
+                          ? "Spinning Maraton 2,5t"
+                          : "Spinning 60 min"}
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums">
                   {Number(linje.actual_duration_h).toFixed(1)}

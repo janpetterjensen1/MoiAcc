@@ -159,10 +159,15 @@ function faktNr(invoiceNumber: number) {
   return String(invoiceNumber).padStart(6, "0");
 }
 
-function linjeBeskriv(note: string | null): string {
-  if (!note) return "Undervisning";
-  if (note.startsWith("__prebilled__|")) return note.split("|")[1];
-  if (note.startsWith("__")) return "Undervisning";
+function linjeBeskriv(note: string | null, varighet_h: number | string): string {
+  if (!note || note.startsWith("__")) {
+    if (note?.startsWith("__prebilled__|")) return note.split("|")[1];
+    // Bruk varighet til å bestemme produktnavn
+    const h = Number(varighet_h);
+    if (h === 1.5) return "Spinning 90 min";
+    if (h === 2.5) return "Spinning Maraton 2,5t";
+    return "Spinning 60 min";
+  }
   return note;
 }
 
@@ -324,7 +329,7 @@ export function InvoicePdf({ data }: { data: PdfInvoiceData }) {
         {lines.map((l, i) => (
           <View key={i} style={s.tableRow}>
             <Text style={[s.td, s.colDate]}>{dato(l.session_date)}</Text>
-            <Text style={[s.td, s.colDesc]}>{linjeBeskriv(l.note)}</Text>
+            <Text style={[s.td, s.colDesc]}>{linjeBeskriv(l.note, l.actual_duration_h)}</Text>
             <Text style={[s.td, s.colTimer]}>
               {Number(l.actual_duration_h).toFixed(1)}
             </Text>

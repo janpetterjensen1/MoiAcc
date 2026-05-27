@@ -159,17 +159,10 @@ function faktNr(invoiceNumber: number) {
   return String(invoiceNumber).padStart(6, "0");
 }
 
-function formatTid(h: number): string {
-  const f = h % 1 === 0 ? String(Math.round(h)) : h.toFixed(1).replace(".", ",");
-  return `${f}t`;
-}
-
-function linjeBeskriv(note: string | null, varighet_h: number | string): string {
-  const h = Number(varighet_h);
-  let produkt = "Spinning";
-  if (note?.startsWith("__prebilled__|")) produkt = note.split("|")[1];
-  else if (note && !note.startsWith("__")) produkt = note;
-  return `${produkt} ${formatTid(h)}`;
+function linjeBeskriv(note: string | null): string {
+  if (note?.startsWith("__prebilled__|")) return note.split("|")[1];
+  if (note && !note.startsWith("__")) return note;
+  return "Spinning";
 }
 
 export interface PdfInvoiceData {
@@ -330,7 +323,7 @@ export function InvoicePdf({ data }: { data: PdfInvoiceData }) {
         {lines.map((l, i) => (
           <View key={i} style={s.tableRow}>
             <Text style={[s.td, s.colDate]}>{dato(l.session_date)}</Text>
-            <Text style={[s.td, s.colDesc]}>{linjeBeskriv(l.note, l.actual_duration_h)}</Text>
+            <Text style={[s.td, s.colDesc]}>{linjeBeskriv(l.note)}</Text>
             <Text style={[s.td, s.colTimer]}>
               {Number(l.actual_duration_h).toFixed(1)}
             </Text>

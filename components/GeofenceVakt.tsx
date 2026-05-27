@@ -174,7 +174,6 @@ export function GeofenceVakt() {
               body: `Midtpunktssjekk for ${sesjon.planned_duration_h}t oppdrag. Er du der? Trykk for å kvittere.`,
               icon: "/icons/icon-192x192.png",
               badge: "/icons/icon-72x72.png",
-              // @ts-expect-error – requireInteraction er gyldig
               requireInteraction: true,
               data: { sesjonId: sesjon.id },
             });

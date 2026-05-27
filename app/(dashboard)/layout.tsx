@@ -21,7 +21,7 @@ export default async function DashboardLayout({
     redirect("/login/mfa");
   }
 
-  const { data: profilRaw } = await supabase.from("profiles" as string).select("visningsnavn, avatar_url").eq("id", user.id).single();
+  const { data: profilRaw } = await supabase.from("profiles").select("visningsnavn, avatar_url").eq("id", user.id).single();
   const profil = profilRaw as { visningsnavn: string; avatar_url: string | null } | null;
   const visningsnavn = profil?.visningsnavn ?? "";
   const avatarUrl = profil?.avatar_url ?? null;

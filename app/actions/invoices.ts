@@ -191,6 +191,30 @@ export async function oppdaterForfalteFakturaerAction() {
   revalidatePath("/fakturaer");
 }
 
+export async function markerSendtAction(fakturaId: string, sentAt: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("invoices")
+    .update({ status: "sent", sent_at: sentAt, approved_at: sentAt })
+    .eq("id", fakturaId);
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/fakturaer/${fakturaId}`);
+  revalidatePath("/fakturaer");
+  return { success: true };
+}
+
+export async function markerBetaltDatoAction(fakturaId: string, paidAt: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("invoices")
+    .update({ status: "paid", paid_at: paidAt })
+    .eq("id", fakturaId);
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/fakturaer/${fakturaId}`);
+  revalidatePath("/fakturaer");
+  return { success: true };
+}
+
 export async function sendTilGodkjenningAction(fakturaId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
   const { error } = await supabase

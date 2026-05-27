@@ -43,6 +43,22 @@ export async function opprettFakturaForslag(customerId: string) {
   const periodFra = format(startOfMonth(iDag), "yyyy-MM-dd");
   const periodTil = format(endOfMonth(iDag), "yyyy-MM-dd");
 
+  // Sjekk om det allerede finnes en aktiv faktura for denne kunden i inneværende måned
+  const { data: eksisterendeFaktura } = await supabase
+    .from("invoices")
+    .select("id, invoice_number, status")
+    .eq("customer_id", customerId)
+    .eq("period_from", periodFra)
+    .eq("period_to", periodTil)
+    .not("status", "in", "(credited)")
+    .maybeSingle();
+  if (eksisterendeFaktura) {
+    return {
+      success: false,
+      error: `Faktura #${eksisterendeFaktura.invoice_number} for denne måneden finnes allerede (status: ${eksisterendeFaktura.status})`,
+    };
+  }
+
   // Hent alle fakturerbare planlagte sesjoner for måneden
   const { data: maanedSesjoner, error: mFeil } = await hentMaanedSesjoner(customerId, periodFra, periodTil);
   if (mFeil || !maanedSesjoner) return { success: false, error: mFeil?.message ?? "Feil ved henting av sesjoner" };
@@ -173,6 +189,19 @@ export async function kreditnotatAction(fakturaId: string): Promise<{ success: b
 export async function oppdaterForfalteFakturaerAction() {
   await markerForfalteFakturaer();
   revalidatePath("/fakturaer");
+}
+
+export async function sendTilGodkjenningAction(fakturaId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("invoices")
+    .update({ status: "awaiting_approval" })
+    .eq("id", fakturaId)
+    .eq("status", "draft");
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/fakturaer/${fakturaId}`);
+  revalidatePath("/fakturaer");
+  return { success: true };
 }
 
 export async function sendPurringAction(fakturaId: string): Promise<{ success: boolean; error?: string }> {

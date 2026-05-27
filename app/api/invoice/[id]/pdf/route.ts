@@ -4,10 +4,12 @@ import { hentFakturaForPdf, hentFakturaLinjer } from "@/lib/db/invoices";
 import { genererPdfBuffer } from "@/lib/invoice/pdf";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const { searchParams } = new URL(req.url);
+  const download = searchParams.get("download") === "1";
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -37,10 +39,14 @@ export async function GET(
   const year = faktura.invoice_date.slice(0, 4);
   const nummerVisning = `${year}-${String(faktura.invoice_number).padStart(4, "0")}`;
 
+  const disposition = download
+    ? `attachment; filename="faktura-${nummerVisning}.pdf"`
+    : `inline; filename="faktura-${nummerVisning}.pdf"`;
+
   return new NextResponse(pdfBuffer.buffer as ArrayBuffer, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="faktura-${nummerVisning}.pdf"`,
+      "Content-Disposition": disposition,
     },
   });
 }

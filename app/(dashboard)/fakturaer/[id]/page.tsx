@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, AlertTriangle, FileDown, Circle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, AlertTriangle, FileDown, Download, Circle } from "lucide-react";
 import { hentFaktura, hentFakturaLinjer } from "@/lib/db/invoices";
 import { formatNorskDato, formatNorskValuta } from "@/lib/utils";
 import { GodkjennKnapp } from "./godkjenn-knapp";
+import { KlargjorKnapp } from "./klargjor-knapp";
 import { KreditnotaKnapp } from "./kreditnota-knapp";
 import { PurringKnapp } from "./purring-knapp";
 import { markerBetaltAction } from "@/app/actions/invoices";
@@ -32,9 +33,6 @@ export default async function FakturaDetaljSide({ params }: Props) {
 
   const kunde = faktura.customers;
   const status = STATUS_ETIKETT[faktura.status] ?? { tekst: faktura.status, klasse: "bg-slate-100 text-slate-500" };
-  const erDraft = faktura.status === "draft" || faktura.status === "awaiting_approval";
-  const erSent = faktura.status === "sent";
-
   return (
     <div className="max-w-2xl">
       <div className="flex items-center gap-3 mb-6">
@@ -156,19 +154,37 @@ export default async function FakturaDetaljSide({ params }: Props) {
         </div>
       </div>
 
-      {/* PDF-forhåndsvisning */}
-      <div className="flex justify-end mb-4">
+      {/* PDF-knapper */}
+      <div className="flex justify-end gap-2 mb-4">
         <Link
           href={`/api/invoice/${faktura.id}/pdf`}
           target="_blank"
           className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors"
         >
           <FileDown size={14} />
-          Forhåndsvis / last ned PDF
+          Forhåndsvis
+        </Link>
+        <Link
+          href={`/api/invoice/${faktura.id}/pdf?download=1`}
+          className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors"
+          download
+        >
+          <Download size={14} />
+          Last ned PDF
         </Link>
       </div>
 
       {/* Handlingsknapper */}
+      {faktura.status === "draft" && (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+          <p className="text-sm font-semibold text-slate-700 mb-1">Utkast klar til gjennomgang</p>
+          <p className="text-xs text-slate-500 mb-4">
+            Sjekk linjene over. Når alt ser riktig ut, sender du fakturaen til godkjenning.
+          </p>
+          <KlargjorKnapp fakturaId={faktura.id} />
+        </div>
+      )}
+
       {faktura.status === "awaiting_approval" && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
           <div className="flex items-start gap-3 mb-4">

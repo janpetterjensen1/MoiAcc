@@ -30,10 +30,10 @@ function avstandMeter(lat1: number, lng1: number, lat2: number, lng2: number): n
 }
 
 /**
- * Beregn tidspunkt for midtpunktsjekk (ms fra nå).
+ * Beregn tidspunkt for geo-sjekk: 10 minutter etter sesjonstart.
  * Returnerer null hvis allerede passert eller starttid mangler.
  */
-function beregnMidtpunktMs(sesjon: GeoSesjon): number | null {
+function beregnSjekktidMs(sesjon: GeoSesjon): number | null {
   if (!sesjon.planned_start_time) return null;
 
   const [h, m] = sesjon.planned_start_time.split(":").map(Number);
@@ -41,29 +41,29 @@ function beregnMidtpunktMs(sesjon: GeoSesjon): number | null {
   const start = new Date(iDag);
   start.setHours(h, m, 0, 0);
 
-  const sluttMs = start.getTime() + sesjon.planned_duration_h * 3600 * 1000;
-  const midtMs = start.getTime() + (sluttMs - start.getTime()) / 2;
+  const sjekktidMs = start.getTime() + 10 * 60 * 1000; // 10 min etter start
   const naa = Date.now();
 
   // Allerede passert?
-  if (midtMs <= naa) return null;
+  if (sjekktidMs <= naa) return null;
 
-  return midtMs - naa;
+  return sjekktidMs - naa;
 }
 
-/** Formater "HH:MM" til "kl. 12:45" */
+/** Formater starttid og sjekktidspunkt */
 function formatKl(sesjon: GeoSesjon): string {
   if (!sesjon.planned_start_time) return "";
   const [h, m] = sesjon.planned_start_time.split(":").map(Number);
   const start = new Date();
   start.setHours(h, m, 0, 0);
   const slutt = new Date(start.getTime() + sesjon.planned_duration_h * 3600 * 1000);
+  const sjekk = new Date(start.getTime() + 10 * 60 * 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
-  const midtH = new Date(start.getTime() + (slutt.getTime() - start.getTime()) / 2);
-  return `${pad(start.getHours())}:${pad(start.getMinutes())}–${pad(slutt.getHours())}:${pad(slutt.getMinutes())} · sjekk kl. ${pad(midtH.getHours())}:${pad(midtH.getMinutes())}`;
+  return `${pad(start.getHours())}:${pad(start.getMinutes())}–${pad(slutt.getHours())}:${pad(slutt.getMinutes())} · sjekk kl. ${pad(sjekk.getHours())}:${pad(sjekk.getMinutes())}`;
 }
 
 export function GeofenceVakt() {
+  const [aktivert, setAktivert] = useState(false);
   const [sesjoner, setSesjoner] = useState<GeoSesjon[]>([]);
   const [funnet, setFunnet] = useState<GeoSesjon | null>(null);
   const [avvist, setAvvist] = useState<Set<string>>(new Set());
@@ -73,6 +73,12 @@ export function GeofenceVakt() {
   const [swRegistrert, setSwRegistrert] = useState(false);
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const sesjonerRef = useRef<GeoSesjon[]>([]);
+
+  // Les geo-innstilling fra localStorage
+  useEffect(() => {
+    const lagret = localStorage.getItem("geoSjekk");
+    setAktivert(lagret === null ? true : lagret === "true"); // default: på
+  }, []);
 
   // ── Registrer Service Worker ──────────────────────────────────────────────
   useEffect(() => {
@@ -94,13 +100,14 @@ export function GeofenceVakt() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Last dagens sesjoner ──────────────────────────────────────────────────
+  // ── Last dagens sesjoner (bare om aktivert) ───────────────────────────────
   useEffect(() => {
+    if (!aktivert) return;
     hentDagensGeoSesjoner().then((data) => {
       setSesjoner(data);
       sesjonerRef.current = data;
     });
-  }, []);
+  }, [aktivert]);
 
   // ── Be om notifikasjonstillatelse ─────────────────────────────────────────
   useEffect(() => {
@@ -138,7 +145,7 @@ export function GeofenceVakt() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [avvist, kvittert]);
 
-  // ── Sett opp midtpunkts-timere ────────────────────────────────────────────
+  // ── Sett opp timere (10 min etter start) ─────────────────────────────────
   useEffect(() => {
     // Rydd gamle timere
     timersRef.current.forEach((t) => clearTimeout(t));
@@ -147,7 +154,7 @@ export function GeofenceVakt() {
     for (const sesjon of sesjoner) {
       if (avvist.has(sesjon.id) || kvittert.has(sesjon.id)) continue;
 
-      const msIgjen = beregnMidtpunktMs(sesjon);
+      const msIgjen = beregnSjekktidMs(sesjon);
 
       if (msIgjen === null) {
         // Ingen starttid satt: fall tilbake til kontinuerlig watchPosition
@@ -171,7 +178,7 @@ export function GeofenceVakt() {
         ) {
           navigator.serviceWorker.ready.then((reg) => {
             reg.showNotification(`MoiAcc — ${sesjon.short_name}`, {
-              body: `Midtpunktssjekk for ${sesjon.planned_duration_h}t oppdrag. Er du der? Trykk for å kvittere.`,
+              body: `10 min inne i ${sesjon.planned_duration_h}t oppdrag. Er du der? Trykk for å kvittere.`,
               icon: "/icons/icon-192x192.png",
               badge: "/icons/icon-72x72.png",
               requireInteraction: true,

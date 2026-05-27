@@ -159,16 +159,17 @@ function faktNr(invoiceNumber: number) {
   return String(invoiceNumber).padStart(6, "0");
 }
 
+function formatTid(h: number): string {
+  const f = h % 1 === 0 ? String(Math.round(h)) : h.toFixed(1).replace(".", ",");
+  return `${f}t`;
+}
+
 function linjeBeskriv(note: string | null, varighet_h: number | string): string {
-  if (!note || note.startsWith("__")) {
-    if (note?.startsWith("__prebilled__|")) return note.split("|")[1];
-    // Bruk varighet til å bestemme produktnavn
-    const h = Number(varighet_h);
-    if (h === 1.5) return "Spinning 90 min";
-    if (h === 2.5) return "Spinning Maraton 2,5t";
-    return "Spinning 60 min";
-  }
-  return note;
+  const h = Number(varighet_h);
+  let produkt = "Spinning";
+  if (note?.startsWith("__prebilled__|")) produkt = note.split("|")[1];
+  else if (note && !note.startsWith("__")) produkt = note;
+  return `${produkt} ${formatTid(h)}`;
 }
 
 export interface PdfInvoiceData {

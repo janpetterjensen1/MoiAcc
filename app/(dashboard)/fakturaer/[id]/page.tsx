@@ -9,6 +9,18 @@ import { KreditnotaKnapp } from "./kreditnota-knapp";
 import { PurringKnapp } from "./purring-knapp";
 import { markerBetaltAction } from "@/app/actions/invoices";
 
+function formatTid(h: number): string {
+  const f = h % 1 === 0 ? String(Math.round(h)) : h.toFixed(1).replace(".", ",");
+  return `${f}t`;
+}
+
+function linjeProdukt(note: string | null, h: number): string {
+  let produkt = "Spinning";
+  if (note?.startsWith("__prebilled__|")) produkt = note.split("|")[1];
+  else if (note && !note.startsWith("__")) produkt = note;
+  return `${produkt} ${formatTid(h)}`;
+}
+
 const STATUS_ETIKETT: Record<string, { tekst: string; klasse: string }> = {
   draft:             { tekst: "Utkast",          klasse: "bg-slate-100 text-slate-500" },
   awaiting_approval: { tekst: "Til godkjenning", klasse: "bg-amber-100 text-amber-700" },
@@ -117,15 +129,7 @@ export default async function FakturaDetaljSide({ params }: Props) {
                   {formatNorskDato(linje.session_date)}
                 </td>
                 <td className="px-4 py-3 text-slate-500 hidden sm:table-cell">
-                  {linje.note?.startsWith("__prebilled__|")
-                    ? linje.note.split("|")[1]
-                    : (linje.note && !linje.note.startsWith("__"))
-                      ? linje.note
-                      : Number(linje.actual_duration_h) === 1.5
-                        ? "Spinning 90 min"
-                        : Number(linje.actual_duration_h) === 2.5
-                          ? "Spinning Maraton 2,5t"
-                          : "Spinning 60 min"}
+                  {linjeProdukt(linje.note, Number(linje.actual_duration_h))}
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums">
                   {Number(linje.actual_duration_h).toFixed(1)}

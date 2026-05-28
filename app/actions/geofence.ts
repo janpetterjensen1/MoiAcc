@@ -5,6 +5,39 @@ import { revalidatePath } from "next/cache";
 import { format } from "date-fns";
 import { opprettSesjonlogg, oppdaterPlanlagtStatus } from "@/lib/db/sessions";
 
+export async function lagrePushSubscriptionAction(sub: {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}): Promise<{ ok: true } | { ok: false; feil: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, feil: "Ikke innlogget" };
+
+  const { error } = await supabase.from("push_subscriptions").upsert(
+    { user_id: user.id, endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+    { onConflict: "endpoint" }
+  );
+  if (error) return { ok: false, feil: error.message };
+  return { ok: true };
+}
+
+export async function slettPushSubscriptionAction(
+  endpoint: string
+): Promise<{ ok: true } | { ok: false; feil: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, feil: "Ikke innlogget" };
+
+  const { error } = await supabase
+    .from("push_subscriptions")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("endpoint", endpoint);
+  if (error) return { ok: false, feil: error.message };
+  return { ok: true };
+}
+
 /**
  * Geocode en kundes fakturaadresse via Nominatim (OpenStreetMap) og lagre koordinatene.
  */

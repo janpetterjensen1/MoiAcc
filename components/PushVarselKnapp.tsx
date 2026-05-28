@@ -23,11 +23,20 @@ export function PushVarselKnapp() {
       return;
     }
 
-    // Sjekk om subscription allerede finnes — bruk getRegistration (ikke .ready som kan henge)
+    // Sjekk om subscription allerede finnes — synkroniser mot server om nødvendig
     navigator.serviceWorker.getRegistration().then((reg) => {
-      if (!reg) return; // Ingen SW ennå — vis "klar"-knapp
+      if (!reg) return;
       reg.pushManager.getSubscription().then((sub) => {
-        if (sub) setStatus("registrert");
+        if (!sub) return;
+        // Subscription finnes i nettleseren — synkroniser med DB
+        const json = sub.toJSON();
+        fetch("/api/push", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
+        }).then((r) => {
+          setStatus(r.ok ? "registrert" : "feil");
+        }).catch(() => setStatus("feil"));
       }).catch(() => {});
     }).catch(() => {});
   }, []);

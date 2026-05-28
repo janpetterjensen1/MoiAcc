@@ -10,6 +10,7 @@ type Status = "klar" | "registrert" | "feil" | "avvist" | "ikke-støttet";
 export function PushVarselKnapp() {
   const [status, setStatus] = useState<Status>("klar");
   const [pending, setPending] = useState(false);
+  const [feilmelding, setFeilmelding] = useState<string | null>(null);
 
   useEffect(() => {
     // Støttesjekk
@@ -65,6 +66,8 @@ export function PushVarselKnapp() {
       setStatus(res.ok ? "registrert" : "feil");
     } catch (e) {
       console.error("Push-feil:", e);
+      const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+      setFeilmelding(msg);
       setStatus("feil");
     } finally {
       setPending(false);
@@ -99,22 +102,27 @@ export function PushVarselKnapp() {
       )}
 
       {(status === "klar" || status === "feil") && (
-        <button
-          onClick={aktiver}
-          disabled={pending}
-          className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl text-sm font-semibold transition-all active:scale-95 disabled:opacity-60"
-          style={{
-            background: status === "feil" ? "rgba(220,50,30,0.08)" : "rgba(201,168,76,0.10)",
-            border: `1px solid ${status === "feil" ? "rgba(220,50,30,0.3)" : "rgba(201,168,76,0.35)"}`,
-            color: status === "feil" ? "#c0392b" : "#b08830",
-          }}
-        >
-          {pending
-            ? <><Loader2 size={15} className="animate-spin" /> Aktiverer…</>
-            : status === "feil"
-              ? <><BellOff size={15} /> Feilet — trykk for å prøve igjen</>
-              : <><Bell size={15} /> Aktiver geo-varsler i bakgrunn</>}
-        </button>
+        <>
+          <button
+            onClick={aktiver}
+            disabled={pending}
+            className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl text-sm font-semibold transition-all active:scale-95 disabled:opacity-60"
+            style={{
+              background: status === "feil" ? "rgba(220,50,30,0.08)" : "rgba(201,168,76,0.10)",
+              border: `1px solid ${status === "feil" ? "rgba(220,50,30,0.3)" : "rgba(201,168,76,0.35)"}`,
+              color: status === "feil" ? "#c0392b" : "#b08830",
+            }}
+          >
+            {pending
+              ? <><Loader2 size={15} className="animate-spin" /> Aktiverer…</>
+              : status === "feil"
+                ? <><BellOff size={15} /> Feilet — trykk for å prøve igjen</>
+                : <><Bell size={15} /> Aktiver geo-varsler i bakgrunn</>}
+          </button>
+          {feilmelding && (
+            <p className="mt-2 text-xs text-red-400 break-all font-mono">{feilmelding}</p>
+          )}
+        </>
       )}
     </div>
   );

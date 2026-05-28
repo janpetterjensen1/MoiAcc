@@ -94,6 +94,7 @@ export async function hentDagensGeoSesjoner(): Promise<{
   const supabase = await createClient();
   const dagStr = format(new Date(), "yyyy-MM-dd");
 
+  // Hent alle sesjoner for i dag (planned + completed) unntatt ferie/helligdag
   const { data, error } = await supabase
     .from("scheduled_sessions")
     .select(`
@@ -104,13 +105,27 @@ export async function hentDagensGeoSesjoner(): Promise<{
       customers!inner (short_name, lat, lng, geofence_radius_m)
     `)
     .eq("scheduled_date", dagStr)
-    .eq("status", "planned");
+    .in("status", ["planned", "completed"]);
 
   if (error || !data) return [];
+
+  // Hent session_log for i dag — finn sesjoner som allerede er fysisk bekreftet
+  // (dvs. har en rad som IKKE er __prebilled__ og IKKE er null)
+  const { data: logg } = await supabase
+    .from("session_log")
+    .select("scheduled_session_id, note")
+    .eq("session_date", dagStr);
+
+  const bekreftetIds = new Set(
+    (logg ?? [])
+      .filter((l) => l.scheduled_session_id && !l.note?.startsWith("__prebilled__"))
+      .map((l) => l.scheduled_session_id as string)
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data as any[])
     .filter((r) => r.customers?.lat != null && r.customers?.lng != null)
+    .filter((r) => !bekreftetIds.has(r.id)) // hopp over allerede bekreftet
     .map((r) => ({
       id: r.id,
       customer_id: r.customer_id,
@@ -163,18 +178,37 @@ export async function autoKvitterAction(
 
   if (!kunde) return { ok: false, feil: "Fant ikke kunde" };
 
-  const { error: loggFeil } = await opprettSesjonlogg({
-    scheduled_session_id: sesjonId,
-    customer_id: customerId,
-    session_date: sesjonDate,
-    actual_duration_h: varighetH,
-    hourly_rate_at_time: Number(kunde.hourly_rate),
-    status: "pending_invoice",
-    note: "Auto-kvittert via geofencing",
-    logged_by: user.id,
-  });
+  // Sjekk om det allerede finnes en pre-fakturert rad for denne sesjonen
+  const { data: preRad } = await supabase
+    .from("session_log")
+    .select("id, note")
+    .eq("scheduled_session_id", sesjonId)
+    .eq("session_date", sesjonDate)
+    .like("note", "__prebilled__|%")
+    .maybeSingle();
 
-  if (loggFeil) return { ok: false, feil: loggFeil.message };
+  if (preRad) {
+    // Pre-fakturert rad finnes — strip __prebilled__-prefikset (bekrefter oppmøte)
+    const renNote = preRad.note?.replace("__prebilled__|", "") ?? null;
+    const { error: oppdFeil } = await supabase
+      .from("session_log")
+      .update({ note: renNote })
+      .eq("id", preRad.id);
+    if (oppdFeil) return { ok: false, feil: oppdFeil.message };
+  } else {
+    // Ingen pre-fakturert rad — opprett ny logg-rad
+    const { error: loggFeil } = await opprettSesjonlogg({
+      scheduled_session_id: sesjonId,
+      customer_id: customerId,
+      session_date: sesjonDate,
+      actual_duration_h: varighetH,
+      hourly_rate_at_time: Number(kunde.hourly_rate),
+      status: "pending_invoice",
+      note: null,
+      logged_by: user.id,
+    });
+    if (loggFeil) return { ok: false, feil: loggFeil.message };
+  }
 
   await oppdaterPlanlagtStatus(sesjonId, "completed");
   revalidatePath("/timer");

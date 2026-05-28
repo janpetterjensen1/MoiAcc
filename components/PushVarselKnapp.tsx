@@ -30,13 +30,21 @@ export function PushVarselKnapp() {
         if (!sub) return;
         // Subscription finnes i nettleseren — synkroniser med DB
         const json = sub.toJSON();
+        const p256dh = json.keys?.p256dh ?? btoa(String.fromCharCode(...new Uint8Array(sub.getKey("p256dh")!)));
+        const auth = json.keys?.auth ?? btoa(String.fromCharCode(...new Uint8Array(sub.getKey("auth")!)));
         fetch("/api/push", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
-        }).then((r) => {
-          setStatus(r.ok ? "registrert" : "feil");
-        }).catch(() => setStatus("feil"));
+          body: JSON.stringify({ endpoint: json.endpoint, keys: { p256dh, auth } }),
+        }).then(async (r) => {
+          if (r.ok) { setStatus("registrert"); return; }
+          const txt = await r.text().catch(() => `HTTP ${r.status}`);
+          setFeilmelding(`Sync feil ${r.status}: ${txt}`);
+          setStatus("feil");
+        }).catch((e) => {
+          setFeilmelding(`Sync krasjet: ${e instanceof Error ? e.message : String(e)}`);
+          setStatus("feil");
+        });
       }).catch(() => {});
     }).catch(() => {});
   }, []);

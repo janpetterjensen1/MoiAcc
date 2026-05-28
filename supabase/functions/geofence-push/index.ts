@@ -242,7 +242,15 @@ Deno.serve(async (req) => {
   });
 
   if (aktuelle.length === 0) {
-    return new Response(JSON.stringify({ sendt: 0, melding: "Ingen sesjoner å sjekke nå" }));
+    return new Response(JSON.stringify({
+      sendt: 0,
+      melding: "Ingen sesjoner å sjekke nå",
+      lokalMinutt,
+      sesjoner: (sesjoner as Array<{ planned_start_time: string; id: string }>).map((s) => {
+        const [h, m] = s.planned_start_time.split(":").map(Number);
+        return { id: s.id, planned_start_time: s.planned_start_time, sjekkMin: h * 60 + m + SJEKK_MINUTTER };
+      }),
+    }));
   }
 
   // Sjekk om disse sesjonene allerede er kvittert

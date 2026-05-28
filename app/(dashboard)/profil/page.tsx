@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProfilSkjema } from "@/components/ProfilSkjema";
 import { GeoSjekkToggle } from "@/components/GeoSjekkToggle";
+import { PushVarselKnapp } from "@/components/PushVarselKnapp";
 
 export default async function ProfilSide() {
   const supabase = await createClient();
@@ -44,6 +45,7 @@ export default async function ProfilSide() {
           invoiceEmail={profil?.invoice_email ?? ""}
         />
         <GeoSjekkToggle />
+        <PushVarselKnapp />
       </div>
     </div>
   );

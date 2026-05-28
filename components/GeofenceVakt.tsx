@@ -41,7 +41,7 @@ function beregnSjekktidMs(sesjon: GeoSesjon): number | null {
   const start = new Date(iDag);
   start.setHours(h, m, 0, 0);
 
-  const sjekktidMs = start.getTime() + 10 * 60 * 1000; // 10 min etter start
+  const sjekktidMs = start.getTime() + 30 * 1000; // TEST: 30 sek
   const naa = Date.now();
 
   // Allerede passert?

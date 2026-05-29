@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Camera, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { oppdaterProfil, lagreAvatar } from "@/app/actions/profil";
+import { lagreSkattConfig } from "@/app/actions/skatt";
 
 interface Props {
   userId: string;
@@ -20,13 +21,18 @@ interface Props {
   postalCode: string;
   city: string;
   invoiceEmail: string;
+  skatteAar: number;
+  annenInntekt: number;
+  forskuddsskattUtskrevet: number;
 }
 
-export function ProfilSkjema({ userId, email, visningsnavn, telefon, tittel, avatarUrl, orgNumber, bankAccount, iban, address, postalCode, city, invoiceEmail }: Props) {
+export function ProfilSkjema({ userId, email, visningsnavn, telefon, tittel, avatarUrl, orgNumber, bankAccount, iban, address, postalCode, city, invoiceEmail, skatteAar, annenInntekt, forskuddsskattUtskrevet }: Props) {
   const [navn, setNavn] = useState(visningsnavn);
   const [tlf, setTlf] = useState(telefon);
   const [rolle, setRolle] = useState(tittel);
   const [orgNr, setOrgNr] = useState(orgNumber);
+  const [annenInntektVal, setAnnenInntektVal] = useState(annenInntekt > 0 ? String(annenInntekt) : "");
+  const [forskuddVal, setForskuddVal] = useState(forskuddsskattUtskrevet > 0 ? String(forskuddsskattUtskrevet) : "");
   const [konto, setKonto] = useState(bankAccount);
   const [ibanNr, setIbanNr] = useState(iban);
   const [adresse, setAdresse] = useState(address);
@@ -93,15 +99,22 @@ export function ProfilSkjema({ userId, email, visningsnavn, telefon, tittel, ava
     setLagreFeil("");
 
     startTransition(async () => {
-      const res = await oppdaterProfil(navn, rolle, tlf, {
-        org_number:    orgNr,
-        bank_account:  konto,
-        iban:          ibanNr,
-        address:       adresse,
-        postal_code:   postnr,
-        city:          poststed,
-        invoice_email: fakturaEpost,
-      });
+      const [res] = await Promise.all([
+        oppdaterProfil(navn, rolle, tlf, {
+          org_number:    orgNr,
+          bank_account:  konto,
+          iban:          ibanNr,
+          address:       adresse,
+          postal_code:   postnr,
+          city:          poststed,
+          invoice_email: fakturaEpost,
+        }),
+        lagreSkattConfig(
+          skatteAar,
+          parseFloat(annenInntektVal.replace(/\s/g, "").replace(",", ".")) || 0,
+          parseFloat(forskuddVal.replace(/\s/g, "").replace(",", ".")) || 0,
+        ),
+      ]);
       if (res?.error) {
         setLagreStatus("feil");
         setLagreFeil(res.error);
@@ -299,6 +312,49 @@ export function ProfilSkjema({ userId, email, visningsnavn, telefon, tittel, ava
               placeholder="faktura@eksempel.no"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Skatteinformasjon */}
+      <div className="pt-4 border-t border-slate-100">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Skatt {skatteAar}</p>
+
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="p-annen-inntekt" className="block text-xs font-medium text-slate-600 mb-1.5">
+              Annen inntekt
+            </label>
+            <input
+              id="p-annen-inntekt"
+              type="text"
+              inputMode="numeric"
+              value={annenInntektVal}
+              onChange={(e) => { setAnnenInntektVal(e.target.value); setLagreStatus("idle"); }}
+              placeholder="0"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
+            <p className="text-[10px] text-slate-400 mt-1">
+              Annen inntekt, ikke fakturert gjennom MoiAcc, for å beregne skatt
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="p-forskudd" className="block text-xs font-medium text-slate-600 mb-1.5">
+              Forskuddsskatt utskrevet fra Altinn
+            </label>
+            <input
+              id="p-forskudd"
+              type="text"
+              inputMode="numeric"
+              value={forskuddVal}
+              onChange={(e) => { setForskuddVal(e.target.value); setLagreStatus("idle"); }}
+              placeholder="0"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
+            <p className="text-[10px] text-slate-400 mt-1">
+              Finn beløpet i Altinn under Skatt og avgift
+            </p>
           </div>
         </div>
       </div>

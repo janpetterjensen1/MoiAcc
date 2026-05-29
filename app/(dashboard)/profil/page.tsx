@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProfilSkjema } from "@/components/ProfilSkjema";
 import { GeoSjekkToggle } from "@/components/GeoSjekkToggle";
 import { PushVarselKnapp } from "@/components/PushVarselKnapp";
+import { hentSkattConfig } from "@/app/actions/skatt";
 
 export default async function ProfilSide() {
   const supabase = await createClient();
@@ -22,8 +23,12 @@ export default async function ProfilSide() {
     city: string | null;
     invoice_email: string | null;
   };
+  const aar = new Date().getFullYear();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profil } = await (supabase as any).from("profiles").select("*").eq("id", user.id).single() as { data: Profil | null; error: unknown };
+  const [{ data: profil }, skattConfig] = await Promise.all([
+    (supabase as any).from("profiles").select("*").eq("id", user.id).single() as Promise<{ data: Profil | null; error: unknown }>,
+    hentSkattConfig(aar),
+  ]);
 
   return (
     <div className="max-w-sm mx-auto">
@@ -43,6 +48,9 @@ export default async function ProfilSide() {
           postalCode={profil?.postal_code ?? ""}
           city={profil?.city ?? ""}
           invoiceEmail={profil?.invoice_email ?? ""}
+          skatteAar={aar}
+          annenInntekt={skattConfig.annen_inntekt}
+          forskuddsskattUtskrevet={skattConfig.forskuddsskatt_utskrevet}
         />
         <GeoSjekkToggle />
         <PushVarselKnapp />

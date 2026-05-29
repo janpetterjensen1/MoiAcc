@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export interface FakturaForPdf {
   id: string;
-  invoice_number: number;
+  invoice_number: string | null;
   customer_id: string;
   invoice_date: string;
   due_date: string;
@@ -29,7 +29,7 @@ export interface FakturaForPdf {
 
 export interface FakturaRad {
   id: string;
-  invoice_number: number;
+  invoice_number: string | null;
   customer_id: string;
   invoice_date: string;
   due_date: string;
@@ -175,9 +175,28 @@ export async function markerSesjonerSomFakturert(sesjonIder: string[], fakturaId
 
 export async function godkjennFaktura(id: string) {
   const supabase = await createClient();
-  return supabase
+
+  // Finn fakturaens år for å generere riktig fakturanummer
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: rad } = await (supabase as any)
     .from("invoices")
-    .update({ approved_at: new Date().toISOString() })
+    .select("invoice_date")
+    .eq("id", id)
+    .single();
+
+  const year = rad ? new Date(rad.invoice_date).getFullYear() : new Date().getFullYear();
+
+  // Tildel fakturanummer atomisk via DB-funksjon
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: nummer } = await (supabase as any).rpc("next_invoice_number", { p_year: year });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (supabase as any)
+    .from("invoices")
+    .update({
+      approved_at: new Date().toISOString(),
+      invoice_number: nummer,
+    })
     .eq("id", id)
     .select()
     .single();
@@ -256,11 +275,16 @@ export async function opprettKreditnota(originalId: string) {
     .single();
   if (error || !original) return { data: null, error: error ?? new Error("Ikke funnet") };
 
+  const year = new Date().getFullYear();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: kreditNummer } = await (supabase as any).rpc("next_invoice_number", { p_year: year });
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: ny, error: nyFeil } = await (supabase as any)
     .from("invoices")
     .insert({
       customer_id: original.customer_id,
+      invoice_number: kreditNummer,
       invoice_date: new Date().toISOString().slice(0, 10),
       due_date: new Date().toISOString().slice(0, 10),
       period_from: original.period_from,

@@ -36,8 +36,7 @@ export async function GET(
   } : undefined;
 
   const pdfBuffer = await genererPdfBuffer(faktura, linjer ?? [], sellerOverride);
-  const year = faktura.invoice_date.slice(0, 4);
-  const nummerVisning = `${year}-${String(faktura.invoice_number).padStart(4, "0")}`;
+  const nummerVisning = faktura.invoice_number ?? faktura.invoice_date.slice(0, 4);
 
   const disposition = download
     ? `attachment; filename="faktura-${nummerVisning}.pdf"`

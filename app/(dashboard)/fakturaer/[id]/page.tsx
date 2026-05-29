@@ -49,7 +49,7 @@ export default async function FakturaDetaljSide({ params }: Props) {
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-bold text-slate-900">
-              Faktura #{faktura.invoice_number}
+              {faktura.invoice_number ? `Faktura #${faktura.invoice_number}` : "Fakturautkast"}
             </h1>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${status.klasse}`}>
               {status.tekst}

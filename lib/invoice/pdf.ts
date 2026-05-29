@@ -20,7 +20,7 @@ export function byggPdfData(
 ): PdfInvoiceData {
   const kunde = faktura.customers!;
   return {
-    invoice_number: faktura.invoice_number,
+    invoice_number: faktura.invoice_number ?? "—",
     invoice_date: faktura.invoice_date,
     due_date: faktura.due_date,
     period_from: faktura.period_from,

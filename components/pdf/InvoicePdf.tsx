@@ -155,8 +155,8 @@ function valuta(v: number | string) {
   return `${intFmt},${dec} kr`;
 }
 
-function faktNr(invoiceNumber: number) {
-  return String(invoiceNumber).padStart(6, "0");
+function faktNr(invoiceNumber: string) {
+  return invoiceNumber;
 }
 
 function linjeBeskriv(note: string | null): string {
@@ -166,7 +166,7 @@ function linjeBeskriv(note: string | null): string {
 }
 
 export interface PdfInvoiceData {
-  invoice_number: number;
+  invoice_number: string;
   invoice_date: string;
   due_date: string;
   period_from: string;

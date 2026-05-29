@@ -115,7 +115,7 @@ export function SkattOversikt({ fakturainntekt, utgifter, aar, initAnnenInntekt,
         <div className="px-5 py-3" style={{ borderBottom: "1px solid rgba(45,122,45,0.15)" }}>
           <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: "rgba(168,216,168,0.5)" }}>Inntekter {aar}</h2>
         </div>
-        <div style={{ divide: "rgba(45,122,45,0.1)" }}>
+        <div>
           <Row label="Fakturainntekt (sendt/betalt)" verdi={fakturainntekt} />
           <div className="px-5 py-3 flex items-center justify-between" style={{ borderTop: "1px solid rgba(45,122,45,0.08)" }}>
             <div>

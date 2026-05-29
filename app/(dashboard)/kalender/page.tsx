@@ -16,6 +16,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { hentPlanlagteSesjoner, hentHelligdager, hentFerieperioder } from "@/lib/db/calendar";
 import { hentAlleKunder } from "@/lib/db/customers";
 import { KalenderSidepanel } from "./sidepanel";
+import { erGoogleKoblet, hentKommendHendelser } from "@/lib/google/calendar";
+import { GoogleKalenderPanel } from "@/components/GoogleKalenderPanel";
 
 // Fargekoding per kunde (stabil basert på indeks)
 const KUNDE_FARGER = [
@@ -46,11 +48,15 @@ export default async function KalenderSide({ searchParams }: Props) {
     { data: helligdager },
     { data: ferieperioder },
     { data: kunder },
+    googleKoblet,
+    googleHendelser,
   ] = await Promise.all([
     hentPlanlagteSesjoner(fraStr, tilStr),
     hentHelligdager(fraStr, tilStr),
     hentFerieperioder(fraStr, tilStr),
     hentAlleKunder(),
+    erGoogleKoblet(),
+    hentKommendHendelser(30).catch(() => []),
   ]);
 
   const helligdagSet = new Map(
@@ -207,11 +213,17 @@ export default async function KalenderSide({ searchParams }: Props) {
       </div>
 
       {/* Sidepanel */}
-      <KalenderSidepanel
-        kunder={kunder ?? []}
-        ferieperioder={ferieperioder ?? []}
-        arValgt={valgtManed.getFullYear()}
-      />
+      <div className="flex flex-col gap-4 lg:w-72 shrink-0">
+        <GoogleKalenderPanel
+          koblet={googleKoblet}
+          hendelser={googleHendelser}
+        />
+        <KalenderSidepanel
+          kunder={kunder ?? []}
+          ferieperioder={ferieperioder ?? []}
+          arValgt={valgtManed.getFullYear()}
+        />
+      </div>
     </div>
   );
 }

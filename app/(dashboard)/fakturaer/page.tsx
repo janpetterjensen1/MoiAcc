@@ -4,7 +4,7 @@ import { hentAlleKunder } from "@/lib/db/customers";
 import { formatNorskDato, formatNorskValuta } from "@/lib/utils";
 import { OpprettFakturaKnapp } from "./opprett-knapp";
 import { GenererAlleUtkastKnapp } from "@/components/GenererAlleUtkastKnapp";
-import { FileText, ChevronRight, Download } from "lucide-react";
+import { FileText, ChevronRight, Download, FilePlus } from "lucide-react";
 
 const STATUS_ETIKETT: Record<string, { tekst: string; badgeClass: string; stripeColor: string }> = {
   draft:             { tekst: "Utkast",          badgeClass: "badge-muted",   stripeColor: "rgba(120,180,120,0.3)" },
@@ -61,6 +61,14 @@ export default async function FakturaerSide() {
               <Download size={13} />
               CSV
             </Link>
+            <Link
+              href="/fakturaer/manuell"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs transition-colors"
+              style={{ color: "rgba(168,216,168,0.6)", border: "1px solid rgba(45,122,45,0.3)" }}
+            >
+              <FilePlus size={13} />
+              Registrer
+            </Link>
             <GenererAlleUtkastKnapp />
             <OpprettFakturaKnapp kunder={aktiveKunder} />
           </div>
@@ -88,7 +96,7 @@ export default async function FakturaerSide() {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                        {f.invoice_number ?? "Utkast"} — {kunde?.short_name}
+                        {f.invoice_number ?? "Utkast"} — {kunde?.short_name ?? f.external_customer_name ?? "—"}
                       </p>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${status.badgeClass}`}>
                         {status.tekst}
@@ -140,7 +148,7 @@ export default async function FakturaerSide() {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                        {f.invoice_number ? `#${f.invoice_number}` : "Utkast"} — {kunde?.short_name}
+                        {f.invoice_number ? `#${f.invoice_number}` : "Utkast"} — {kunde?.short_name ?? f.external_customer_name ?? "—"}
                       </p>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${status.badgeClass}`}>
                         {status.tekst}

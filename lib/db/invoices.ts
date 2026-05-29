@@ -30,7 +30,9 @@ export interface FakturaForPdf {
 export interface FakturaRad {
   id: string;
   invoice_number: string | null;
-  customer_id: string;
+  customer_id: string | null;
+  external_customer_name: string | null;
+  kilde: "system" | "manuell";
   invoice_date: string;
   due_date: string;
   period_from: string;
@@ -48,6 +50,10 @@ export interface FakturaRad {
   created_at: string;
   created_by: string;
   customers: { id: string; short_name: string; legal_name: string } | null;
+}
+
+export function visningsnavnForFaktura(f: Pick<FakturaRad, "customers" | "external_customer_name">): string {
+  return f.customers?.short_name ?? f.customers?.legal_name ?? f.external_customer_name ?? "Ukjent";
 }
 
 export interface FakturaLinje {

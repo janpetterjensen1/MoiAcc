@@ -5,7 +5,7 @@ import { InvoicePdf, type PdfInvoiceData } from "@/components/pdf/InvoicePdf";
 
 export async function GET() {
   const data: PdfInvoiceData = {
-    invoice_number: 1,
+    invoice_number: "2026-001",
     invoice_date: "2026-05-19",
     due_date: "2026-06-02",
     period_from: "2026-05-01",

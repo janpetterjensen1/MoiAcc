@@ -13,8 +13,8 @@ import {
   sendFaktura,
 } from "@/lib/db/invoices";
 
-function faktNr(invoiceNumber: number) {
-  return String(invoiceNumber).padStart(6, "0");
+function faktNr(invoiceNumber: string | null | undefined, fallback = "—") {
+  return invoiceNumber ?? fallback;
 }
 
 function valuta(v: number | string) {

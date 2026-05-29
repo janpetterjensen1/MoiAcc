@@ -264,3 +264,71 @@ export async function genererAlleUtkastAction(): Promise<{
   revalidatePath("/fakturaer");
   return { opprettet, hoppetOver, feil };
 }
+
+export async function registrerManuellFakturaAction(formData: FormData): Promise<{ success: boolean; error?: string; id?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Ikke innlogget" };
+
+  const invoiceNumber = (formData.get("invoice_number") as string | null)?.trim();
+  const customerId    = (formData.get("customer_id") as string | null)?.trim() || null;
+  const kundeNavn     = (formData.get("external_customer_name") as string | null)?.trim() || null;
+  const invoiceDate   = formData.get("invoice_date") as string;
+  const dueDate       = (formData.get("due_date") as string | null)?.trim() || invoiceDate;
+  const periodFrom    = (formData.get("period_from") as string | null)?.trim() || invoiceDate;
+  const periodTo      = (formData.get("period_to") as string | null)?.trim() || invoiceDate;
+  const subtotal      = parseFloat((formData.get("subtotal") as string || "0").replace(",", "."));
+  const status        = (formData.get("status") as string) || "sent";
+  const paidAt        = (formData.get("paid_at") as string | null)?.trim() || null;
+
+  if (!invoiceDate) return { success: false, error: "Fakturadato er påkrevd" };
+  if (!customerId && !kundeNavn) return { success: false, error: "Kunde eller kundenavn er påkrevd" };
+  if (isNaN(subtotal)) return { success: false, error: "Ugyldig beløp" };
+
+  let finalNumber = invoiceNumber || null;
+  if (invoiceNumber) {
+    // Synk årsteller hvis oppgitt nummer er høyere enn gjeldende
+    const match = invoiceNumber.match(/^(\d{4})-(\d+)$/);
+    if (match) {
+      const year = parseInt(match[1]);
+      const seq  = parseInt(match[2]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).rpc("sync_invoice_year_seq", { p_year: year, p_min_seq: seq });
+    }
+  } else {
+    // Auto-generer neste nummer
+    const year = new Date(invoiceDate).getFullYear();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: nr } = await (supabase as any).rpc("next_invoice_number", { p_year: year });
+    finalNumber = nr;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("invoices")
+    .insert({
+      invoice_number:         finalNumber,
+      customer_id:            customerId || null,
+      external_customer_name: kundeNavn || null,
+      kilde:                  "manuell",
+      invoice_date:           invoiceDate,
+      due_date:               dueDate,
+      period_from:            periodFrom,
+      period_to:              periodTo,
+      subtotal,
+      vat_amount:             0,
+      vat_exempt_note:        "Unntatt MVA, jf. mval. § 3-8",
+      status:                 status === "paid" ? "paid" : "sent",
+      approved_at:            new Date().toISOString(),
+      sent_at:                new Date().toISOString(),
+      paid_at:                status === "paid" ? (paidAt || invoiceDate) : null,
+      created_by:             user.id,
+    })
+    .select()
+    .single();
+
+  if (error || !data) return { success: false, error: error?.message ?? "Feil ved registrering" };
+
+  revalidatePath("/fakturaer");
+  return { success: true, id: data.id };
+}

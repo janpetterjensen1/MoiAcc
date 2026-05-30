@@ -72,7 +72,7 @@ export default async function DashbordSide() {
     const k = f.customers as any;
     return {
       id: f.id as string,
-      nummer: (f.invoice_number as string) ?? "—",
+      nummer: (f.invoice_number as unknown as string) ?? "—",
       total: Number(f.total),
       forfallsdato: f.due_date as string,
       status: f.status as "sent" | "overdue",
@@ -99,11 +99,12 @@ export default async function DashbordSide() {
   for (const rad of ufakturerte ?? []) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const navn = (rad.customers as any)?.short_name ?? "Ukjent";
-    const existing = timerMap.get(navn) ?? { kundeNavn: navn, timer: 0, belop: 0, datoer: [] };
+    const existing: TimerRad = timerMap.get(navn) ?? { kundeNavn: navn, timer: 0, belop: 0, datoer: [] };
     existing.timer += Number(rad.actual_duration_h);
     existing.belop += Number(rad.line_amount);
-    if (!existing.datoer.includes(rad.session_date as string)) {
-      existing.datoer.push(rad.session_date as string);
+    const dato = rad.session_date as unknown as string;
+    if (!existing.datoer.includes(dato)) {
+      existing.datoer.push(dato);
     }
     timerMap.set(navn, existing);
   }

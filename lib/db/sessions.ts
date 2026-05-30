@@ -5,6 +5,7 @@ export interface PlanlagtSesjonMedKunde {
   id: string;
   customer_id: string;
   scheduled_date: string;
+  planned_start_time: string | null;
   planned_duration_h: string;
   status: "planned" | "completed" | "sick" | "substitute" | "holiday" | "vacation" | "cancelled";
   blocked_reason: string | null;
@@ -24,6 +25,7 @@ export interface SesjonloggMedKunde {
   note: string | null;
   logged_at: string;
   customers: { id: string; short_name: string } | null;
+  scheduled_sessions: { planned_start_time: string | null } | null;
 }
 
 export async function hentDagensSesjoner(dato?: string) {
@@ -70,7 +72,7 @@ export async function hentSesjonloggForManed(ar: number, maned: number) {
   const tilStr = new Date(ar, maned, 0).toISOString().slice(0, 10);
   const result = await supabase
     .from("session_log")
-    .select("*, customers(id, short_name)")
+    .select("*, customers(id, short_name), scheduled_sessions(planned_start_time)")
     .gte("session_date", fraStr)
     .lte("session_date", tilStr)
     .order("session_date", { ascending: false });

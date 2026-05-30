@@ -82,17 +82,19 @@ export default async function TimerSide({ searchParams }: Props) {
         type: "logg";
         dato: string;
         kundeNavn: string;
+        starttid: string | null;
         timer: number;
         belop: number;
         status: string;
       }
-    | { type: "ulogget"; dato: string; kundeNavn: string; planTimer: number };
+    | { type: "ulogget"; dato: string; kundeNavn: string; starttid: string | null; planTimer: number };
 
   const timebankRader: LoggRad[] = [
     ...(maanedLogg ?? []).map((r) => ({
       type: "logg" as const,
       dato: r.session_date,
       kundeNavn: (r.customers as { short_name: string } | null)?.short_name ?? "Ukjent",
+      starttid: (r.scheduled_sessions as { planned_start_time: string | null } | null)?.planned_start_time?.slice(0, 5) ?? null,
       timer: Number(r.actual_duration_h),
       belop: Number(r.line_amount),
       status: r.status,
@@ -101,6 +103,7 @@ export default async function TimerSide({ searchParams }: Props) {
       type: "ulogget" as const,
       dato: s.scheduled_date,
       kundeNavn: (s.customers as { short_name: string } | null)?.short_name ?? "Ukjent",
+      starttid: s.planned_start_time?.slice(0, 5) ?? null,
       planTimer: Number(s.planned_duration_h),
     })),
   ].sort((a, b) => b.dato.localeCompare(a.dato));
@@ -221,18 +224,13 @@ export default async function TimerSide({ searchParams }: Props) {
         <div className="space-y-1.5">
           {timebankRader.map((rad, i) => {
             if (rad.type === "ulogget") {
+              const deler = [formatNorskDato(rad.dato), rad.kundeNavn, rad.starttid, `${rad.planTimer.toFixed(1)}t`].filter(Boolean).join(" · ");
               return (
                 <div
                   key={`ulogget-${rad.dato}-${i}`}
                   className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-slate-400 tabular-nums w-20">{formatNorskDato(rad.dato)}</span>
-                    <span className="text-slate-600">{rad.kundeNavn}</span>
-                    <span className="text-xs bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded">
-                      {rad.planTimer.toFixed(1)}t plan
-                    </span>
-                  </div>
+                  <span className="text-slate-600">{deler}</span>
                   <HelpCircle size={18} className="text-amber-400 shrink-0" />
                 </div>
               );
@@ -240,29 +238,23 @@ export default async function TimerSide({ searchParams }: Props) {
 
             const erFravar = ["sick", "substitute", "vacation"].includes(rad.status);
             const erFakturerbar = rad.status === "pending_invoice" || rad.status === "invoiced";
+            const deler = [formatNorskDato(rad.dato), rad.kundeNavn, rad.starttid, `${rad.timer.toFixed(1)}t`].filter(Boolean).join(" · ");
 
             return (
               <div
                 key={`logg-${rad.dato}-${i}`}
                 className={`flex items-center justify-between rounded-lg border px-4 py-2.5 text-sm ${
-                  erFravar
-                    ? "border-slate-200 bg-slate-50"
-                    : "border-slate-200 bg-white"
+                  erFravar ? "border-slate-200 bg-slate-50" : "border-slate-200 bg-white"
                 }`}
               >
+                <span className={erFravar ? "text-slate-400" : "text-slate-700"}>{deler}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-slate-400 tabular-nums w-20">{formatNorskDato(rad.dato)}</span>
-                  <span className={erFravar ? "text-slate-400" : "text-slate-700"}>{rad.kundeNavn}</span>
+                  {erFakturerbar && (
+                    <span className="text-slate-400 tabular-nums text-xs">{formatNorskValuta(rad.belop)}</span>
+                  )}
                   {erFravar && (
                     <span className="text-xs bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded">
                       {STATUS_LABEL[rad.status]}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  {erFakturerbar && (
-                    <span className="text-slate-400 tabular-nums text-xs">
-                      {rad.timer.toFixed(1)}t · {formatNorskValuta(rad.belop)}
                     </span>
                   )}
                   {erFakturerbar && <CheckCircle2 size={18} className="text-green-500 shrink-0" />}
